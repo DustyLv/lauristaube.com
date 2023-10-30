@@ -1,150 +1,101 @@
-const { DateTime } = require('luxon')
-const fs = require('fs')
-const pluginNavigation = require('@11ty/eleventy-navigation')
-const markdownIt = require('markdown-it')
-const markdownitlinkatt = require('markdown-it-link-attributes')
-const pluginRss = require('@11ty/eleventy-plugin-rss')
-const pluginSyntaxHighlight = require('@11ty/eleventy-plugin-syntaxhighlight')
-const markdownItAnchor = require('markdown-it-anchor')
+const { DateTime } = require("luxon");
+const fs = require("fs");
+const pluginRss = require("@11ty/eleventy-plugin-rss");
+const pluginSyntaxHighlight = require("@11ty/eleventy-plugin-syntaxhighlight");
+const pluginNavigation = require("@11ty/eleventy-navigation");
+const markdownIt = require("markdown-it");
+const markdownItAnchor = require("markdown-it-anchor");
 
-module.exports = function (eleventyConfig) {
-	eleventyConfig.addPassthroughCopy('./src/css/styles.css')
-	eleventyConfig.addPassthroughCopy('./src/browserconfig.xml')
-	eleventyConfig.addPassthroughCopy('./src/site.webmanifest')
-	eleventyConfig.addPassthroughCopy('./src/admin/config.yml')
-	eleventyConfig.addPassthroughCopy('./src/img')
+module.exports = function(eleventyConfig) {
+  eleventyConfig.addPlugin(pluginRss);
+  eleventyConfig.addPlugin(pluginSyntaxHighlight);
+  eleventyConfig.addPlugin(pluginNavigation);
 
-	eleventyConfig.addPlugin(pluginNavigation)
-	eleventyConfig.addPlugin(pluginRss)
-	eleventyConfig.addPlugin(pluginSyntaxHighlight)
+  eleventyConfig.setDataDeepMerge(true);
 
-	eleventyConfig.setDataDeepMerge(true)
+  eleventyConfig.addLayoutAlias("post", "layouts/post.njk");
 
-	eleventyConfig.addShortcode('respimg', (path, alt, style) => {
-		const fetchBase = `https://res.cloudinary.com/${eleventyConfig.cloudinaryCloudName}/image/upload/`
-		const src = `${fetchBase}q_auto,f_auto,w_400/${path}.${eleventyConfig.format}`
-		const srcset = eleventyConfig.srcsetWidths
-			.map(({ w, v }) => {
-				return `${fetchBase}dpr_auto,q_auto,w_${w}/kailoon.com/${path}.${eleventyConfig.format} ${v}w`
-			})
-			.join(', ')
+  eleventyConfig.addFilter("readableDate", dateObj => {
+    return DateTime.fromJSDate(dateObj, {zone: 'utc'}).toFormat("dd LLL yyyy");
+  });
 
-		return `<img class="${
-			style ? style : ''
-		}" loading="lazy" src="${src}" srcset="${srcset}" alt="${
-			alt ? alt : ''
-		}" width="400" height="300" sizes="100vw">`
-	})
+  // https://html.spec.whatwg.org/multipage/common-microsyntaxes.html#valid-date-string
+  eleventyConfig.addFilter('htmlDateString', (dateObj) => {
+    return DateTime.fromJSDate(dateObj, {zone: 'utc'}).toFormat('yyyy-LL-dd');
+  });
 
-	eleventyConfig.addShortcode('figure', (path, alt, caption) => {
-		const fetchBase = `https://res.cloudinary.com/${eleventyConfig.cloudinaryCloudName}/image/upload/`
-		const src = `${fetchBase}q_auto,f_auto,w_400/${path}.${eleventyConfig.format}`
-		const srcset = eleventyConfig.srcsetWidths
-			.map(({ w, v }) => {
-				return `${fetchBase}dpr_auto,q_auto,w_${w}/kailoon.com/${path}.${eleventyConfig.format} ${v}w`
-			})
-			.join(', ')
+  // Get the first `n` elements of a collection.
+  eleventyConfig.addFilter("head", (array, n) => {
+    if( n < 0 ) {
+      return array.slice(n);
+    }
 
-		return `<figure class="mb-10"><img loading="lazy" src="${src}" srcset="${srcset}" alt="${
-			alt ? alt : ''
-		}" width="400" height="300"><figcaption class="text-center text-sm mt-3 text-gray-600 dark:text-gray-200">${
-			caption ? caption : ''
-		}</figcaption></figure>`
-	})
+    return array.slice(0, n);
+  });
 
-	// https://github.com/eeeps/eleventy-respimg
-	eleventyConfig.cloudinaryCloudName = 'kailoon'
-	eleventyConfig.srcsetWidths = [
-		{ w: 400, v: 400 },
-		{ w: 600, v: 600 },
-		{ w: 768, v: 768 },
-		{ w: 820, v: 820 },
-		{ w: 1240, v: 1240 }
-	]
-	eleventyConfig.format = 'webp'
-	eleventyConfig.fallbackWidth = 800
+  eleventyConfig.addCollection("tagList", require("./_11ty/getTagList"));
 
-	/* Markdown Overrides */
-	let markdownLibrary = markdownIt({
-		html: true,
-		breaks: true
-	})
-		.use(markdownitlinkatt, {
-			pattern: /^(?!(https:\/\/kailoon\.com|#)).*$/gm,
-			attrs: {
-				target: '_blank',
-				rel: 'noreferrer'
-			}
-		})
-		.use(markdownItAnchor, {
-			permalink: markdownItAnchor.permalink.headerLink(),
-			permalinkClass: 'direct-link text-gray-400 dark:text-gray-600',
-			permalinkSymbol: '#',
-			permalinkAttrs: (slug, state) => ({
-				'aria-label': `permalink to ${slug}`,
-				title: 'Anchor link for easy sharing.'
-			})
-		})
-	eleventyConfig.setLibrary('md', markdownLibrary)
+  eleventyConfig.addPassthroughCopy("img");
+  eleventyConfig.addPassthroughCopy("files");
+  eleventyConfig.addPassthroughCopy("css");
 
-	eleventyConfig.addFilter('readableDate', (dateObj) => {
-		return DateTime.fromJSDate(dateObj, { zone: 'utc' }).toFormat('dd LLL yyyy')
-	})
+  /* Markdown Overrides */
+  let markdownLibrary = markdownIt({
+    html: true,
+    breaks: true,
+    linkify: true
+  }).use(markdownItAnchor, {
+    permalink: true,
+    permalinkClass: "direct-link",
+    permalinkSymbol: "#"
+  });
+  eleventyConfig.setLibrary("md", markdownLibrary);
 
-	// https://html.spec.whatwg.org/multipage/common-microsyntaxes.html#valid-date-string
-	eleventyConfig.addFilter('htmlDateString', (dateObj) => {
-		return DateTime.fromJSDate(dateObj, { zone: 'utc' }).toFormat('yyyy-LL-dd')
-	})
+  // Browsersync Overrides
+  eleventyConfig.setBrowserSyncConfig({
+    callbacks: {
+      ready: function(err, browserSync) {
+        const content_404 = fs.readFileSync('_site/404.html');
 
-	// Get the first `n` elements of a collection.
-	eleventyConfig.addFilter('head', (array, n) => {
-		if (n < 0) {
-			return array.slice(n)
-		}
+        browserSync.addMiddleware("*", (req, res) => {
+          // Provides the 404 content without redirect.
+          res.write(content_404);
+          res.end();
+        });
+      },
+    },
+    ui: false,
+    ghostMode: false
+  });
 
-		return array.slice(0, n)
-	})
+  return {
+    templateFormats: [
+      "md",
+      "njk",
+      "html",
+      "liquid"
+    ],
 
-	eleventyConfig.addFilter('min', (...numbers) => {
-		return Math.min.apply(null, numbers)
-	})
+    // If your site lives in a different subdirectory, change this.
+    // Leading or trailing slashes are all normalized away, so don’t worry about those.
 
-	eleventyConfig.addCollection('tagList', function (collection) {
-		let tagSet = new Set()
-		collection.getAll().forEach(function (item) {
-			if ('tags' in item.data) {
-				let tags = item.data.tags
+    // If you don’t have a subdirectory, use "" or "/" (they do the same thing)
+    // This is only used for link URLs (it does not affect your file structure)
+    // Best paired with the `url` filter: https://www.11ty.io/docs/filters/url/
 
-				tags = tags.filter(function (item) {
-					switch (item) {
-						// this list should match the `filter` list in tags.njk
-						case 'works':
-						case 'posts':
-							return false
-					}
+    // You can also pass this in on the command line using `--pathprefix`
+    // pathPrefix: "/",
 
-					return true
-				})
+    markdownTemplateEngine: "liquid",
+    htmlTemplateEngine: "njk",
+    dataTemplateEngine: "njk",
 
-				if (item.data.published) {
-					for (const tag of tags) {
-						tagSet.add(tag)
-					}
-				}
-			}
-		})
-
-		// returning an array in addCollection works in Eleventy 0.5.3
-		return [...tagSet]
-	})
-
-	return {
-		dir: {
-			input: 'src',
-			output: '_site',
-			data: '_data',
-			includes: '_components',
-			layouts: '_layouts'
-		}
-	}
-}
+    // These are all optional, defaults are shown:
+    dir: {
+      input: ".",
+      includes: "_includes",
+      data: "_data",
+      output: "_site"
+    }
+  };
+};

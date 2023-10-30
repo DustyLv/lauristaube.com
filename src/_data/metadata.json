@@ -1,11 +1,11 @@
 {
-	"name": "kailoon",
-	"url": "https://kailoon.com/",
+	"name": "Lauris Taube",
+	"url": "https://lauristaube.com/",
 	"feed": {
 		"subtitle": "The personal and professional website of designer & developer, kailoon.",
 		"filename": "feed.xml",
 		"path": "/feed/feed.xml",
-		"id": "https://kailoon.com/"
+		"id": "https://lauristaube.com/"
 	},
 	"jsonfeed": {
 		"path": "/feed/feed.json",

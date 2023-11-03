@@ -1,18 +1,5 @@
 {
-  "name": "lauristaube.com",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-	"dev": "astro dev",
-    "start": "astro dev",
-    "build": "astro build",
-    "preview": "astro preview"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
   "dependencies": {
-    "astro": "^3.4.3"
+    "bootstrap": "^5.3.2"
   }
 }

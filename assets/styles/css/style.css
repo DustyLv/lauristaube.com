@@ -474,11 +474,12 @@ section .section-label {
 
 .social-bar {
   margin: 25px 0;
+
 }
 
 .social-bar a {
   margin: 0 10px;
-  color: var(--accent);
+  font-size: 150%;
 }
 
 #works .grid-item {
@@ -532,17 +533,18 @@ section .section-label {
 }
 
 #works .grid-item .grid-content {
-  width: 80%;
-  margin: 0;
+  /* width: 80%; */
+  /* margin: 0; */
   position: absolute;
-  bottom: 5%;
-  left: 5%;
-  right: 5%;
+  display: inline-block;
+  bottom: 1rem;
+  left: 1rem;
+  right: 1rem;
   color: var(--normal);
   text-transform: capitalize;
-  padding-left: 10px;
+  /* padding-left: 10px;
   padding-right: 10px;
-  border-radius: 4px;
+  border-radius: 4px; */
   box-shadow: 0px 0px 10px 1px #000000;
 
 }
@@ -550,6 +552,7 @@ section .section-label {
 
 #works .gallery {
   display: grid;
+  height: 500px;
   grid-template-columns: repeat(3, 10fr);
   /* grid-template-rows: repeat(1, 10fr); */
   grid-column-gap: 2em;
@@ -663,6 +666,7 @@ section .section-label {
 #contact .content .social-bar {
   display: block;
   width: 100%;
+
 }
 
 #contact .content .social-bar a {
@@ -773,6 +777,12 @@ section .section-label {
 i.fa {
   display: inline-block;
   background-color: transparent;
+  /* color: #000000; */
+}
+
+#btnBlack {
+  display: inline-block;
+  background-color: transparent;
   color: #000000;
 
 }
@@ -824,7 +834,7 @@ i.fa {
   height: 7em;
   padding: 2em 2em;
   justify-content: center;
-  
+
   /* color: #a11a37; */
 }
 
@@ -847,5 +857,5 @@ i.fa {
 #pagination>button:hover {
   background-color: var(--accent);
   box-shadow: 0px 0px 10px 4px #202020;
-  
+
 }

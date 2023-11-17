@@ -22,6 +22,9 @@
 </head>
 
 <body>
+
+    
+
     <div class="line-container">
         <div class="l1"></div>
         <div class="l5"></div>
@@ -29,11 +32,12 @@
     <div class="header">
         <div class="container-wrap">
             <ul class="nav-links left">
-                <li><a href="#works">Works</a></li>
-                <li><a href="#about">About</a></li>
+                
             </ul>
             <img class="profile" src="./assets/images/Logo.png" />
             <ul class="nav-links right">
+                <li><a href="#works">Works</a></li>
+                <li><a href="#about">About</a></li>
                 <!-- <li><a href="#links">Links</a></li> -->
                 <li><a href="#contact">Contact</a></li>
             </ul>
@@ -56,49 +60,62 @@
     </section>
     <section id="works">
         <span class="section-label">WORKS</span>
+
         <div class="container-wrap">
-            <div class="gallery">
-                <div class="column">
-                    <a href="#" class="grid-item">
-                        <img width="100%" class="effect" src="./assets/images/works/work-5.png" />
-                        <div class="grid-content">
-                            <span class="label">Featured</span>
-                            <h3>
-                                Motivation is the first step to success.
-                            </h3>
-                        </div>
-                    </a>
-                    <a href="#" class="grid-item">
-                        <img width="100%" class="effect" src="./assets/images/works/work-3.png" />
-                        <div class="grid-content">
-                            <h3>
-                                Motivation is the first step to success.
-                            </h3>
-                        </div>
-                    </a>
+            <div class="gallery" id="projectsContainer">
+                <!-- PROJECTS LOADED DYNAMICALLY FROM 'projects.html' -->
+                <div class="grid-item" data-project-id="Project1">
+                    <img width="100%" class="effect" src="./assets/images/works/work-5.png" />
+                    <div class="grid-content">
+                        <span class="label">Featured</span>
+                        <h3>
+                            Motivation is the first step to success.
+                        </h3>
+                    </div>
                 </div>
-                <div class="column">
-                    <a href="#" class="grid-item">
-                        <img width="100%" class="effect" src="./assets/images/works/work-2.png" />
-                        <div class="grid-content">
-                            <h3>
-                                Motivation is the first step to success.
-                            </h3>
-                        </div>
-                    </a>
-                    <a href="#" class="grid-item">
-                        <img width="100%" class="effect" src="./assets/images/works/work-4.png" />
-                        <div class="grid-content">
-                            <span class="label">Featured</span>
-                            <h3>
-                                Motivation is the first step to success.
-                            </h3>
-                        </div>
-                    </a>
+                <div class="grid-item" data-project-id="Project2">
+                    <img width="100%" class="effect" src="./assets/images/works/work-4.png" />
+                    <div class="grid-content">
+                        <h3>
+                            Motivation is the first step to success.
+                        </h3>
+                    </div>
                 </div>
+                <div class="grid-item" data-project-id="Project3">
+                    <img width="100%" class="effect" src="./assets/images/works/work-2.png" />
+                    <div class="grid-content">
+                        <h3>
+                            Motivation is the first step to success.
+                        </h3>
+                    </div>
+                </div>
+                <div class="grid-item" data-project-id="Project4">
+                    <img width="100%" class="effect" src="./assets/images/works/work-3.png" />
+                    <div class="grid-content">
+                        <span class="label">Featured</span>
+                        <h3>
+                            Motivation is the first step to success.
+                        </h3>
+                    </div>
+                </div>
+            </div>
+            <div id="pagination">
+                <button class="buttonLeft" onclick="prevPage()"> << </button>
+                <button class="buttonRight" onclick="nextPage()"> >> </button>
+                <!-- Add more buttons for additional pages -->
             </div>
         </div>
     </section>
+
+    <!-- Project Info Popup -->
+    <div id="projectInfoPopup" class="project-info-popup">
+        <!-- Content will be added dynamically using JavaScript -->
+        <span id="closeBtn "class="close-btn" onclick="closeProjectInfo()">×</span>
+        <div id="projectInfoContent"></div>
+    </div>
+
+    <script src="script.js"></script>
+
 
     <section id="about">
         <span class="section-label">ABOUT</span>

@@ -1,249 +1,262 @@
-<!--
-    Developer: Girish Patil : https://evilhead.me
-    Originally designed by: Denis Abdullin : https://deab.cc/
--->
 <!DOCTYPE html>
-<html lang="en">
-
+<html lang="en" class="scroll-smooth">
 <head>
-    <meta charset="utf-8" />
-    <title>Lauris Taube | Portfolio</title>
-    <link rel="shortcut icon" href="./favicon.ico" type="image/x-icon" />
-    <link rel="icon" href="./favicon.ico" type="image/x-icon" />
-    <link href="https://fonts.googleapis.com/css?family=Nunito" rel="stylesheet" />
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.css" rel="stylesheet" />
-    <link rel="stylesheet" href="./assets/styles/css/style.css" />
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
-
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <!--[if IE]>
-            <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
-        <![endif]-->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lauris Taube - Game Developer & 3D Artist</title>
+    <meta name="description" content="Portfolio of Lauris Taube, a creative technologist, Unity developer, and 3D artist from Latvia specializing in VR/AR and interactive game development.">
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Person",
+      "name": "Lauris Taube",
+      "url": "https://www.lauristaube.com",
+      "jobTitle": "Game Developer & 3D Artist",
+      "knowsAbout": ["Unity", "Blender", "VR Development", "Game Development", "C#"],
+      "sameAs": [
+        "https://github.com/dustylv",
+        "https://www.linkedin.com/in/lauris-taube-1b5aa4116//"
+      ],
+      "address": {
+        "@type": "PostalAddress",
+        "addressCountry": "LV",
+        "addressLocality": "Valmiera"
+      }
+    }
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <link rel="stylesheet" href="stylesheet.css">
+    <script src="script.js"></script> 
 </head>
+<body class="antialiased">
+    <div id="cursor-glow"></div>
+    <div id="background-grid"></div>
 
-<body>
-
-    
-
-    <div class="line-container">
-        <div class="l1"></div>
-        <div class="l5"></div>
-    </div>
-    <div class="header">
-        <div class="container-wrap">
-            <ul class="nav-links left">
-                
-            </ul>
-            <img class="profile" src="./assets/images/Logo.png" />
-            <ul class="nav-links right">
-                <li><a href="#works">Works</a></li>
-                <li><a href="#about">About</a></li>
-                <!-- <li><a href="#links">Links</a></li> -->
-                <li><a href="#contact">Contact</a></li>
-            </ul>
-        </div>
-    </div>
-
-    <section id="main-content">
-        <div class="container-wrap">
-            <div class="hero">
-                <h1 class="capitalize">
-                    Some motivational <span class="text-highlight">BS</span><br/>
-                </h1>
-                <div class="social-bar">
-                    <a href=""><i class="fa fa-twitter"></i></a>
-                    <a href=""><i class="fa fa-behance"></i></a>
-                    <a href=""><i class="fa fa-instagram"></i></a>
-                </div>
+    <header id="header" class="fixed top-0 left-0 right-0 z-50 transition-all duration-300">
+        <nav class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <a href="#home">
+                <img src="favicon.png" alt="Lauris Taube Logo" class="logo-img">
+            </a>
+            <div class="hidden md:flex space-x-8 items-center text-sm font-medium text-gray-300">
+                <a href="#home" class="hover:text-white transition">About</a>
+                <a href="#projects" class="hover:text-white transition">Projects</a>
+                <a href="#experience" class="hover:text-white transition">Experience</a>
+                <a href="resume.html" target="_blank" class="hover:text-white transition">Resume</a>
+                <a href="#contact" class="bg-white text-black font-bold py-2 px-4 rounded-lg hover:bg-gray-200 transition">Contact</a>
             </div>
+            <button id="mobile-menu-button" class="md:hidden text-white focus:outline-none">
+                <i data-lucide="menu"></i>
+            </button>
+        </nav>
+        <div id="mobile-menu" class="hidden md:hidden bg-black/80 backdrop-blur-sm">
+            <a href="#home" class="block py-3 px-4 text-sm hover:bg-zinc-800">About</a>
+            <a href="#projects" class="block py-3 px-4 text-sm hover:bg-zinc-800">Projects</a>
+            <a href="#experience" class="block py-3 px-4 text-sm hover:bg-zinc-800">Experience</a>
+            <a href="resume.html" target="_blank" class="block py-3 px-4 text-sm hover:bg-zinc-800">Resume</a>
+            <a href="#contact" class="block py-3 px-4 text-sm hover:bg-zinc-800">Contact</a>
         </div>
-    </section>
-    <section id="works">
-        <span class="section-label">WORKS</span>
+    </header>
 
-        <div class="container-wrap">
-            <div class="gallery" id="projectsContainer">
-                <!-- PROJECTS LOADED DYNAMICALLY FROM 'projects.html' -->
-                <div class="grid-item" data-project-id="Project1">
-                    <img width="100%" class="effect" src="./assets/images/works/work-5.png" />
-                    <div class="grid-content">
-                        <span class="label">Featured</span>
-                        <h3>
-                            Motivation is the first step to success.
-                        </h3>
-                    </div>
-                </div>
-                <div class="grid-item" data-project-id="Project2">
-                    <img width="100%" class="effect" src="./assets/images/works/work-4.png" />
-                    <div class="grid-content">
-                        <h3>
-                            Motivation is the first step to success.
-                        </h3>
-                    </div>
-                </div>
-                <div class="grid-item" data-project-id="Project3">
-                    <img width="100%" class="effect" src="./assets/images/works/work-2.png" />
-                    <div class="grid-content">
-                        <h3>
-                            Motivation is the first step to success.
-                        </h3>
-                    </div>
-                </div>
-                <div class="grid-item" data-project-id="Project4">
-                    <img width="100%" class="effect" src="./assets/images/works/work-3.png" />
-                    <div class="grid-content">
-                        <span class="label">Featured</span>
-                        <h3>
-                            Motivation is the first step to success.
-                        </h3>
-                    </div>
-                </div>
-                <div class="grid-item" data-project-id="Project4">
-                    <img width="100%" class="effect" src="./assets/images/works/work-3.png" />
-                    <div class="grid-content">
-                        <span class="label">Featured</span>
-                        <h3>
-                            Motivation is the first step to success.
-                        </h3>
-                    </div>
-                </div>
-            </div>
-            <div id="pagination">
-                <button class="buttonLeft" onclick="prevPage()"> << </button>
-                <button class="buttonRight" onclick="nextPage()"> >> </button>
-                <!-- Add more buttons for additional pages -->
-            </div>
-        </div>
-    </section>
-
-    <!-- Project Info Popup -->
-    <div id="projectInfoPopup" class="project-info-popup">
-        <!-- Content will be added dynamically using JavaScript -->
-        <span id="closeBtn "class="close-btn" onclick="closeProjectInfo()">×</span>
-        <div id="projectInfoContent"></div>
-    </div>
-
-    <script src="script.js"></script>
-
-
-    <section id="about">
-        <span class="section-label">ABOUT</span>
-        <div class="container-wrap">
-            <div class="gallery">
-                <div class="row">
-                    <div class="grid-item">
-                        <div class="grid-content">
-                            <h3>3D Modeling</h3>
-                            <p>
-                                Of course, motivation really isn’t simple at
-                                all. That is why there is multi-billion
-                                industry focused on self-help books, tapes,
-                                seminars, camps, and coaches.
-                            </p>
-                        </div>
-                    </div>
-                    <div class="grid-item">
-                        <div class="grid-content">
-                            <h3>Unity Development</h3>
-                            <p>
-                                As humans, we have progressed in so many
-                                ways, but we have lost touch with our
-                                bodies, nature, and the power of prayer.
-                                There seems to be a spiritual renaissance,
-                                of sorts, going on in the “new age”
-                                movement.
-                            </p>
-                        </div>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="grid-item">
-                        <div class="grid-content">
-                            <h3>Virtual Reality</h3>
-                            <p>
-                                If at anytime, you notice that a friend of
-                                yours is getting demotivated about life, try
-                                to inspire him/her as much as you can. Even
-                                if you are physically away from your friend
-                                you can send him inspirational ecards and
-                                tell him to download motivational
-                                screensavers and wallpapers. So motivate
-                                everyone who needs the boost.
-                            </p>
-                        </div>
-                    </div>
-                    <!-- <div class="grid-item">
-                            <div class="grid-content">
-                                <h3>----</h3>
-                                <p>
-                                    Personally, the importance does not lie in
-                                    what religion you are; however, a lack of
-                                    religion does seem to run parallel with
-                                    depression. This is classified as spiritual
-                                    illness, which will have a negative effect
-                                    on you mentally, physically, or totally.
-                                </p>
+    <main>
+        <section id="home" class="pt-48 flex items-center" style="padding-bottom: var(--hero-bottom-spacing);">
+            <div class="container mx-auto px-6">
+                <div class="grid lg:grid-cols-5 gap-8 md:gap-16 items-center">
+                    
+                    <!-- Left Column: Hero -->
+                    <div class="lg:col-span-3">
+                        <h1 id="hero-title" class="text-5xl lg:text-7xl font-black text-white mb-4 leading-none hero-gradient-text">
+                        Lauris Taube
+                        </h1>
+                        <p id="hero-subtitle" class="text-xl lg:text-2xl text-slate-300 max-w-3xl mb-8">
+                            <span class="highlight">Creative Technologist</span> based in Latvia, crafting <span class="highlight">games & interactive experiences</span>.
+                        </p>
+                        <div id="hero-cta" class="flex flex-wrap items-center gap-6">
+                            <a href="#projects" class="bg-white text-black font-bold py-3 px-6 rounded-lg text-lg transition-transform transform hover:scale-105">View Projects</a>
+                             <div class="flex items-center space-x-4">
+                                <a href="https://github.com/dustylv" target="_blank" class="text-slate-400 hover:text-white transition"><i data-lucide="github" class="w-7 h-7"></i></a>
+                                <a href="https://www.linkedin.com/in/lauris-taube-1b5aa4116/" target="_blank" class="text-slate-400 hover:text-white transition"><i data-lucide="linkedin" class="w-7 h-7"></i></a>
                             </div>
-                        </div> -->
+                        </div>
+                    </div>
+
+                    <!-- Right Column: Paged About -->
+                    <div id="about" class="pt-16 md:pt-0 lg:col-span-2">
+                         <div class="about-paged-container relative overflow-hidden bg-[#111] border border-[var(--border)] rounded-2xl">
+                            <!-- Single Progress Bar -->
+                            <div class="absolute top-0 left-0 right-0 h-1 bg-zinc-800/50">
+                                <div id="about-progress-bar" class="h-1"></div>
+                            </div>
+                            <!-- Slides -->
+                            <div class="about-slide active" data-index="0">
+                                <div class="about-slide-content">
+                                    <div class="about-icon"><i data-lucide="box" class="w-12 h-12"></i></div>
+                                    <div>
+                                        <h3 class="text-sm font-bold uppercase tracking-widest text-accent mb-2 reveal-text">3D Artist</h3>
+                                        <p class="text-lg text-slate-100 font-medium reveal-text">Crafting immersive digital worlds and game-ready assets from the ground up using <span class="highlight">Blender</span>.</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="about-slide" data-index="1">
+                                <div class="about-slide-content">
+                                    <div class="about-icon"><i data-lucide="rectangle-goggles" class="w-12 h-12"></i></div>
+                                    <div>
+                                        <h3 class="text-sm font-bold uppercase tracking-widest text-accent mb-2 reveal-text">Unity Developer</h3>
+                                        <p class="text-lg text-slate-100 font-medium reveal-text">Specializing in <span class="highlight">VR/AR</span> and <span class="highlight">Game Development</span> to build engaging, high-performance applications.</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="about-slide" data-index="2">
+                                <div class="about-slide-content">
+                                    <div class="about-icon"><i data-lucide="brain-circuit" class="w-12 h-12"></i></div>
+                                    <div>
+                                        <h3 class="text-sm font-bold uppercase tracking-widest text-accent mb-2 reveal-text">Experience Designer</h3>
+                                        <p class="text-lg text-slate-100 font-medium reveal-text">Creating interactive stories and effective <span class="highlight">training experiences</span> within virtual and augmented reality.</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Page Indicators -->
+                            <div class="absolute bottom-4 left-8 right-8 flex items-center gap-3">
+                                <div class="w-1/3 bg-zinc-800 rounded-full h-1"><div class="slide-indicator h-1 rounded-full"></div></div>
+                                <div class="w-1/3 bg-zinc-800 rounded-full h-1"><div class="slide-indicator h-1 rounded-full"></div></div>
+                                <div class="w-1/3 bg-zinc-800 rounded-full h-1"><div class="slide-indicator h-1 rounded-full"></div></div>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
             </div>
-        </div>
-    </section>
+        </section>
 
+        <div class="container mx-auto px-6 relative z-10">
+            <section id="projects" class="pb-24 md:pb-32">
+                <div class="mb-12">
+                    <h2 class="text-sm font-bold uppercase tracking-widest text-accent mb-4 reveal-text">Projects</h2>
+                    <h3 class="text-4xl md:text-5xl font-bold text-white reveal-text">My Works</h3>
+                </div>
+                <div id="featured-project-container" class="mb-16">
+                    <!-- Featured project will be loaded here -->
+                </div>
+                <div id="projects-grid" class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <!-- Paginated projects are loaded here -->
+                </div>
+                <div id="pagination-controls" class="flex justify-center items-center gap-2 md:gap-4 mt-16">
+                    <!-- Pagination controls are loaded here -->
+                </div>
+            </section>
 
-    <br /><br />
+            <section id="experience" class="pb-24 md:pb-32">
+                <div class="mb-16 text-center">
+                    <h2 class="text-sm font-bold uppercase tracking-widest text-accent mb-4 reveal-text">Career &amp; Education</h2>
+                    <h3 class="text-4xl md:text-5xl font-bold text-white reveal-text">My Journey</h3>
+                </div>
+                <div class="max-w-4xl mx-auto grid md:grid-cols-2 gap-16">
+                    <!-- Experience Column -->
+                    <div>
+                        <h4 class="text-2xl font-bold text-white mb-8 reveal-text text-center md:text-left">Experience</h4>
+                        <div class="relative experience-timeline">
+                            <div class="experience-item mb-8 reveal-text">
+                                <h5 class="text-xl font-medium text-slate-100">Unity Developer</h5>
+                                <p class="text-slate-400 mb-2">Vidzeme University of Applied Sciences | VRAR Laboratory</p>
+                                <p class="text-slate-400 mb-2">2019 - Present</p>
+                                <p>Developer for interactive VR training and educational modules, simulations and other experiences. Responsible for architecture, logic implementation, graphical elements and performance optimization.</p>
+                            </div>
+                            <div class="experience-item mb-8 reveal-text">
+                                <h5 class="text-xl font-medium text-slate-100">Lecturer</h5>
+                                <p class="text-slate-400 mb-2">Vidzeme University of Applied Sciences</p>
+                                <p class="text-slate-400 mb-2">2019 - Present</p>
+                                <p>Giving lectures on 3D modeling. Using Blender as the main tool. Giving a good starting point for students to start creating 3D models for games.</p>
+                            </div>
+                            <div class="experience-item reveal-text">
+                                <h5 class="text-xl font-medium text-slate-100">Freelance Developer</h5>
+                                <p class="text-slate-400 mb-2">2018 - Present</p>
+                                <p>Developer for interactive VR and flatscreen experiences in Unity. Responsible for architecture, logic implementation, graphical elements and performance optimization.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Education Column -->
+                    <div>
+                        <h4 class="text-2xl font-bold text-white mb-8 reveal-text text-center md:text-left">Education</h4>
+                        <div class="relative experience-timeline">
+                            <div class="experience-item mb-8 reveal-text">
+                                <h5 class="text-xl font-medium text-slate-100">Mg.sc.comp. in Sociotechnic Systems Modeling</h5>
+                                <p class="text-slate-400 mb-2">Vidzeme University of Applied Sciences</p>
+                                <p class="text-slate-400 mb-2">2016 - 2018</p>
+                                <p>Specialized in sociotechnic model output data visualization. Graduated with honors after completing a thesis on an interactive simulation data visualization tool for virtual reality made in Unity.</p>
+                            </div>
 
-    <section id="contact">
-        <div class="container-wrap">
-            <h2>Contact</h2>
-            <div class="content">
-                <div class="desc">
-                    <p>
-                        Positive pleasure-oriented goals are much more
-                        powerful motivators than negative fear-based ones.
-                    </p>
-                    <div class="social-bar">
-                        <a href=""><i class="fa fa-twitter"></i></a>
-                        <a href=""><i class="fa fa-behance"></i></a>
-                        <a href=""><i class="fa fa-instagram"></i> </a>
+                            <div class="experience-item mb-8 reveal-text">
+                                <h5 class="text-xl font-medium text-slate-100">B.Sc. in Computer Science</h5>
+                                <p class="text-slate-400 mb-2">Vidzeme University of Applied Sciences</p>
+                                <p class="text-slate-400 mb-2">2012 - 2016</p>
+                                <p>General computer science education with an interest in game development and computer graphics. Graduated with honors after completing a thesis on creating a digital board game in Unity.</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <form class="contact-form">
-                    <label>
-                        <span>NAME</span>
-                        <input type="text" placeholder="Incognito" />
-                    </label>
-                    <label>
-                        <span>E-MAIL</span>
-                        <input type="email" placeholder="incognito@gmail.com" />
-                    </label>
-                    <label>
-                        <span>MESSAGE</span>
-                        <textarea placeholder="Your question or suggestion"></textarea>
-                    </label>
-                </form>
-                <button type="button"><i class="fa fa-envelope fa-lg fa-fw" id="btnBlack"></i></button>
+            </section>
+
+            <section id="contact" class="py-24 md:py-32 text-center">
+                <h2 class="text-3xl md:text-5xl font-bold text-white mb-4 reveal-text">Have a project in mind?</h2>
+                <p class="text-lg text-slate-400 max-w-2xl mx-auto mb-8 reveal-text">I'm currently available for freelance opportunities and collaborations. Let's build something amazing together.</p>
+                <a href="mailto:lauristaube@gmail.com" class="text-2xl md:text-4xl font-medium highlight hover:text-accent transition-colors duration-300 reveal-text ">
+                   lauristaube@gmail.com
+                </a>
+            </section>
+        </div>
+    </main>
+
+    <footer class="border-t border-zinc-900">
+        <div class="container mx-auto px-6 py-8 text-center text-slate-500 text-sm">
+            <p>&copy; 2025 Lauris Taube</p>
+        </div>
+    </footer>
+
+    <!-- Project Detail Modal -->
+    <div id="project-modal-overlay" class="fixed inset-0 z-[100] flex items-center justify-center p-4 hidden">
+        <div id="project-modal" class="bg-[#111] border border-[var(--border)] rounded-2xl max-w-4xl w-full max-h-[90vh] flex flex-col">
+            <div class="p-6 flex justify-between items-center border-b border-[var(--border)] flex-shrink-0">
+                <h3 id="project-modal-title" class="text-2xl font-bold text-white">Project Title</h3>
+                <button id="project-modal-close" class="text-slate-400 hover:text-white">
+                    <i data-lucide="x"></i>
+                </button>
+            </div>
+            <div class="p-6 md:p-8 overflow-y-auto">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <div class="lg:col-span-2">
+                        <div id="project-modal-gallery" class="space-y-4 mb-8">
+                            <!-- Images will be loaded here -->
+                        </div>
+                        <h4 class="text-xl font-bold text-white mb-4">About the Project</h4>
+                        <div id="project-modal-long-desc" class="prose prose-invert prose-p:text-slate-300 max-w-none">
+                           <!-- Long description will be loaded here -->
+                        </div>
+                    </div>
+                    <div>
+                        <h4 class="text-xl font-bold text-white mb-4">Details</h4>
+                        <ul id="project-modal-details" class="space-y-3">
+                            <!-- Details will be loaded here -->
+                        </ul>
+                        <h4 class="text-xl font-bold text-white mb-4 mt-8">Technologies</h4>
+                        <div id="project-modal-tags" class="flex flex-wrap gap-2">
+                            <!-- Tags will be loaded here -->
+                        </div>
+                        <div id="project-modal-links-container" class="mt-8">
+                            <h4 class="text-xl font-bold text-white mb-4">Links</h4>
+                            <div id="project-modal-links" class="space-y-3">
+                                <!-- Links will be loaded here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
-    </section>
-    <div id="footer">
-        <div class="container-wrap">
-            <span> Copyright © 2018 Denis Abdullin – deab.ru </span>
-
-        </div>
     </div>
+
 </body>
-
-<script>
-    document.querySelectorAll(".nav-links > li > a")
-        .forEach(function (link) {
-            link.addEventListener("click", function (e) {
-                document.querySelector(e.target.getAttribute("href"))
-                    .scrollIntoView({
-                        behavior: "smooth"
-                    });
-            });
-        });
-</script>
-
 </html>

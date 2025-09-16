@@ -394,6 +394,33 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    const galleryPrevBtn = document.getElementById('gallery-prev');
+    const galleryNextBtn = document.getElementById('gallery-next');
+    let currentImageIndex = 0;
+    let images = [];
+
+    function updateGallery() {
+        modalGallery.querySelectorAll('img, video').forEach((el, index) => {
+            el.classList.toggle('active', index === currentImageIndex);
+        });
+        galleryPrevBtn.classList.toggle('hidden', currentImageIndex === 0);
+        galleryNextBtn.classList.toggle('hidden', currentImageIndex === images.length - 1);
+    }
+
+    galleryPrevBtn.addEventListener('click', () => {
+        if (currentImageIndex > 0) {
+            currentImageIndex--;
+            updateGallery();
+        }
+    });
+
+    galleryNextBtn.addEventListener('click', () => {
+        if (currentImageIndex < images.length - 1) {
+            currentImageIndex++;
+            updateGallery();
+        }
+    });
+
     function openProjectModal(projectId) {
         const project = projectsData.find(p => p.id === projectId);
         if (!project) return;
@@ -402,19 +429,33 @@ document.addEventListener('DOMContentLoaded', () => {
         modalDesc.innerHTML = project.longDescription;
         
         let galleryHTML = '';
-        if (project.videos && project.videos.length > 0) {
-             galleryHTML += project.videos.map(vid => `
-                <video controls autoplay muted loop playsinline class="rounded-lg border border-[var(--border)] w-full">
-                    <source src="${vid}" type="video/mp4">
-                    Your browser does not support the video tag.
-                </video>
-             `).join('');
+        images = [...(project.videos || []), ...(project.images || [])];
+        
+        if (images.length > 0) {
+            galleryHTML += images.map((media, index) => {
+                if (media.endsWith('.mp4')) {
+                    return `<video controls autoplay muted loop playsinline class="rounded-lg border border-[var(--border)] w-full ${index === 0 ? 'active' : ''}">
+                                <source src="${media}" type="video/mp4">
+                                Your browser does not support the video tag.
+                            </video>`;
+                } else {
+                    return `<img src="${media}" alt="${project.title} screenshot" class="rounded-lg border border-[var(--border)] w-full ${index === 0 ? 'active' : ''}">`;
+                }
+            }).join('');
         }
-        if (project.images && project.images.length > 0) {
-            galleryHTML += project.images.map(img => `<img src="${img}" alt="${project.title} screenshot" class="rounded-lg border border-[var(--border)] w-full">`).join('');
-        }
-        console.log(galleryHTML);
+        
         modalGallery.innerHTML = galleryHTML;
+        currentImageIndex = 0;
+
+        if (images.length > 1) {
+            galleryPrevBtn.classList.remove('hidden');
+            galleryNextBtn.classList.remove('hidden');
+            updateGallery();
+        } else {
+            galleryPrevBtn.classList.add('hidden');
+            galleryNextBtn.classList.add('hidden');
+        }
+
 
         modalDetails.innerHTML = project.details.map(d => `<li class="flex justify-between border-b border-dashed border-zinc-800 py-2"><span class="font-medium text-slate-400">${d.label}</span><span class="text-white">${d.value}</span></li>`).join('');
         modalTags.innerHTML = project.tags.map(tag => `<span class="tech-tag">${tag}</span>`).join('');

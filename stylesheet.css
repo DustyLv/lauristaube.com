@@ -278,3 +278,10 @@ body.modal-open {
         text-decoration: none !important;
     }
 }
+#project-modal-gallery img, #project-modal-gallery video {
+    display: none;
+}
+
+#project-modal-gallery img.active, #project-modal-gallery video.active {
+    display: block;
+}

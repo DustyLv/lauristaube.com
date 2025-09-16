@@ -4,7 +4,7 @@ export const projectsData = [
         title: 'Pitchforks & Paragraphs',
         description: 'A fast-paced medieval typing game where you cast word-spells to quell peasant riots. Built from scratch in Unity.',
         longDescription: `<p>Pitchforks & Paragraphs is a wave-based typing game where players must type words displayed on peasants' signs to cast spells and disperse them. The game features a dynamic difficulty system, a combo-based scoring mechanism that rewards speed and accuracy, and online leaderboards.</p>`,
-        images: ['https://i.imgur.com/cNbAvgM.jpeg'],
+        images: ['https://i.imgur.com/cNbAvgM.jpeg','https://i.imgur.com/jZZUdZ5.jpeg','https://i.imgur.com/mBlEXsz.jpeg'],
         details: [{ label: 'Platform', value: 'Web' }, { label: 'Type', value: 'Game' }],
         links: [{ label: 'Play on itch.io', url: 'https://dustylv.itch.io/pitchforksnparagraphs' }],
         icon: 'gamepad-2',

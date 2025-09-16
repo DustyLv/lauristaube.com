@@ -28,11 +28,13 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
     <link rel="stylesheet" href="stylesheet.css">
-    <script src="script.js"></script> 
+    <script type="module" src="script.js"></script> 
+    <script type="module" src="projectdata.js"></script> 
 </head>
 <body class="antialiased">
     <div id="cursor-glow"></div>
@@ -47,7 +49,7 @@
                 <a href="#home" class="hover:text-white transition">About</a>
                 <a href="#projects" class="hover:text-white transition">Projects</a>
                 <a href="#experience" class="hover:text-white transition">Experience</a>
-                <a href="resume.html" target="_blank" class="hover:text-white transition">Resume</a>
+                <a href="#resume" class="hover:text-white transition">Resume</a>
                 <a href="#contact" class="bg-white text-black font-bold py-2 px-4 rounded-lg hover:bg-gray-200 transition">Contact</a>
             </div>
             <button id="mobile-menu-button" class="md:hidden text-white focus:outline-none">
@@ -58,7 +60,7 @@
             <a href="#home" class="block py-3 px-4 text-sm hover:bg-zinc-800">About</a>
             <a href="#projects" class="block py-3 px-4 text-sm hover:bg-zinc-800">Projects</a>
             <a href="#experience" class="block py-3 px-4 text-sm hover:bg-zinc-800">Experience</a>
-            <a href="resume.html" target="_blank" class="block py-3 px-4 text-sm hover:bg-zinc-800">Resume</a>
+            <a href="resume#" target="_blank" class="block py-3 px-4 text-sm hover:bg-zinc-800">Resume</a>
             <a href="#contact" class="block py-3 px-4 text-sm hover:bg-zinc-800">Contact</a>
         </div>
     </header>
@@ -116,7 +118,7 @@
                                     <div class="about-icon"><i data-lucide="brain-circuit" class="w-12 h-12"></i></div>
                                     <div>
                                         <h3 class="text-sm font-bold uppercase tracking-widest text-accent mb-2 reveal-text">Experience Designer</h3>
-                                        <p class="text-lg text-slate-100 font-medium reveal-text">Creating interactive stories and effective <span class="highlight">training experiences</span> within virtual and augmented reality.</p>
+                                        <p class="text-lg text-slate-100 font-medium reveal-text">Creating <span class="highlight">interactive stories</span> and effective <span class="highlight">training experiences</span> within virtual and augmented reality.</p>
                                     </div>
                                 </div>
                             </div>
@@ -201,9 +203,22 @@
                 </div>
             </section>
 
+            <section id="resume" class="pb-24 md:pb-32 text-center">
+                <div class="mb-16">
+                     <h2 class="text-sm font-bold uppercase tracking-widest text-accent mb-4 reveal-text">Resume</h2>
+                     <h3 class="text-4xl md:text-5xl font-bold text-white reveal-text">My CV</h3>
+                </div>
+                <p class="text-lg text-slate-400 max-w-2xl mx-auto mb-8 reveal-text">
+                    For a detailed overview of my skills and experience, you can generate a print-friendly resume. <br> This will compile all my project data into a clean, PDF-ready format.
+                </p>
+                <button id="generate-resume-btn" style="background-color: var(--accent);" class="text-white font-bold py-3 px-8 rounded-lg hover:opacity-90 transition-opacity text-lg reveal-text">
+                    Get Resume
+                </button>
+            </section>
+
             <section id="contact" class="py-24 md:py-32 text-center">
                 <h2 class="text-3xl md:text-5xl font-bold text-white mb-4 reveal-text">Have a project in mind?</h2>
-                <p class="text-lg text-slate-400 max-w-2xl mx-auto mb-8 reveal-text">I'm currently available for freelance opportunities and collaborations. Let's build something amazing together.</p>
+                <p class="text-lg text-slate-400 max-w-2xl mx-auto mb-8 reveal-text">I'm available for freelance opportunities and collaborations. <br> Let's build something amazing together!</p>
                 <a href="mailto:lauristaube@gmail.com" class="text-2xl md:text-4xl font-medium highlight hover:text-accent transition-colors duration-300 reveal-text ">
                    lauristaube@gmail.com
                 </a>
@@ -212,8 +227,22 @@
     </main>
 
     <footer class="border-t border-zinc-900">
-        <div class="container mx-auto px-6 py-8 text-center text-slate-500 text-sm">
-            <p>&copy; 2025 Lauris Taube</p>
+        <div class="container mx-auto px-6 py-8 text-slate-400">
+            <div class="flex flex-col md:flex-row justify-between items-center gap-8">
+                <p class="text-sm text-slate-500 order-3 md:order-1">&copy; 2025 Lauris Taube. All rights reserved.</p>
+                
+                <div class="flex flex-wrap justify-center gap-x-6 gap-y-4 order-2">
+                    <a href="mailto:lauristaube@gmail.com" class="flex items-center gap-2 hover:text-accent transition-colors">
+                        <i data-lucide="mail" class="w-5 h-5"></i>
+                        <span class="text-sm">lauristaube@gmail.com</span>
+                    </a>
+                </div>
+
+                <div class="flex items-center gap-6 order-1 md:order-3">
+                     <a href="https://github.com/dustylv" target="_blank" rel="noopener noreferrer" class="hover:text-accent transition-colors"><i data-lucide="github" class="w-6 h-6"></i></a>
+                     <a href="https://www.linkedin.com/in/lauris-taube-1b5aa4116/" target="_blank" rel="noopener noreferrer" class="hover:text-accent transition-colors"><i data-lucide="linkedin" class="w-6 h-6"></i></a>
+                </div>
+            </div>
         </div>
     </footer>
 
@@ -257,6 +286,9 @@
             </div>
         </div>
     </div>
-
+    <!-- =========== PRINTABLE RESUME OUTPUT (Hidden on screen) =========== -->
+    <div id="resume-output" class="hidden">
+        <!-- Resume content will be dynamically generated here -->
+    </div>
 </body>
 </html>

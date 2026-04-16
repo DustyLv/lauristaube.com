@@ -211,6 +211,23 @@ body.modal-open {
     transform: scale(1);
     opacity: 1;
 }
+
+/* --- NEW --- Scrollbar styling for description */
+#project-modal-long-desc::-webkit-scrollbar {
+    width: 8px;
+}
+#project-modal-long-desc::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+}
+#project-modal-long-desc::-webkit-scrollbar-thumb {
+    background: var(--accent);
+    border-radius: 10px;
+}
+#project-modal-long-desc::-webkit-scrollbar-thumb:hover {
+    background: #c22a4d;
+}
+
 /* Pagination Styles */
 .pagination-btn {
     background-color: #1a1a1a;
@@ -278,10 +295,63 @@ body.modal-open {
         text-decoration: none !important;
     }
 }
-#project-modal-gallery img, #project-modal-gallery video {
+
+/* --- GALLERY & LIGHTBOX STYLES --- */
+
+#project-modal-gallery {
+    position: relative; 
+}
+
+#gallery-content-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 400px;
+    background-color: #000;
+    border-radius: 0.5rem;
+    overflow: hidden;
+}
+
+#gallery-content-wrapper img {
+    cursor: zoom-in;
+}
+
+#lightbox-overlay {
+    transition: opacity 0.3s ease;
+}
+
+.video-wrapper {
+    position: relative;
+    width: 100%;
+    padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
+    height: 0;
+}
+
+.video-wrapper iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border: none;
+}
+
+#project-modal-gallery img,
+#project-modal-gallery video,
+#project-modal-gallery .video-wrapper {
     display: none;
 }
 
-#project-modal-gallery img.active, #project-modal-gallery video.active {
+#project-modal-gallery img.active,
+#project-modal-gallery video.active {
     display: block;
+    max-height: 400px;
+    width: auto;
+    max-width: 100%;
+    object-fit: contain;
+}
+
+#project-modal-gallery .video-wrapper.active {
+    display: block;
+    width: 100%;
 }

@@ -204,17 +204,29 @@ function generateResume() {
     }, 200);
 }
 
+function getYoutubeEmbedUrl(url) {
+    let videoId;
+    try {
+        const urlObj = new URL(url);
+        if (urlObj.hostname === "www.youtube.com" || urlObj.hostname === "youtube.com") {
+            videoId = urlObj.searchParams.get("v");
+        } else if (urlObj.hostname === "youtu.be") {
+            videoId = urlObj.pathname.slice(1);
+        }
+    } catch (e) {
+        return null;
+    }
+
+    if (videoId) {
+        return `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&loop=1&playlist=${videoId}&enablejsapi=1`;
+    }
+    return null;
+}
+
 document.addEventListener('DOMContentLoaded', () => {
-    // const resumeBtnDesktop = document.getElementById('desktop-resume-btn');
-    // const resumeBtnMobile = document.getElementById('mobile-resume-btn');
+
     const generateBtn = document.getElementById('generate-resume-btn');
-    
-    // if(resumeBtnDesktop) resumeBtnDesktop.addEventListener('click', (e) => { e.preventDefault(); document.getElementById('resume').scrollIntoView(); });
-    // if(resumeBtnMobile) resumeBtnMobile.addEventListener('click', (e) => { e.preventDefault(); document.getElementById('resume').scrollIntoView(); });
     if(generateBtn) generateBtn.addEventListener('click', generateResume);
-
-
-    // --- ALL OTHER PAGE LOGIC ---
     
     const featuredProject = projectsData.find(p => p.isFeatured);
     regularProjects = projectsData.filter(p => !p.isFeatured);
@@ -225,7 +237,6 @@ document.addEventListener('DOMContentLoaded', () => {
     
     renderPaginatedProjects();
 
-    // --- Cursor Glow ---
     const cursorGlow = document.getElementById('cursor-glow');
     if (cursorGlow && window.matchMedia('(pointer: fine)').matches) {
         window.addEventListener('mousemove', (e) => {
@@ -320,10 +331,8 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
         controlsContainer.innerHTML = controlsHTML;
 
-        // Re-render lucide icons for the new buttons
         lucide.createIcons();
 
-        // Add event listeners
         document.getElementById('prev-page').addEventListener('click', () => {
             if (currentPage > 1) {
                 currentPage--;
@@ -346,7 +355,6 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         });
 
-        // Update disabled state
         document.getElementById('prev-page').disabled = currentPage === 1;
         document.getElementById('next-page').disabled = currentPage === pageCount;
     }
@@ -379,48 +387,91 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Project Modal Logic ---
     const modalOverlay = document.getElementById('project-modal-overlay');
     const modalCloseBtn = document.getElementById('project-modal-close');
-    
     const modalTitle = document.getElementById('project-modal-title');
-    const modalGallery = document.getElementById('project-modal-gallery');
+    const galleryContentWrapper = document.getElementById('gallery-content-wrapper');
     const modalDesc = document.getElementById('project-modal-long-desc');
     const modalDetails = document.getElementById('project-modal-details');
     const modalTags = document.getElementById('project-modal-tags');
     const modalLinksContainer = document.getElementById('project-modal-links-container');
     const modalLinks = document.getElementById('project-modal-links');
-
-    function handleEscKey(event) {
-        if (event.key === 'Escape') {
-            closeProjectModal();
-        }
-    }
-
     const galleryPrevBtn = document.getElementById('gallery-prev');
     const galleryNextBtn = document.getElementById('gallery-next');
+    
+    // --- Lightbox Logic ---
+    const lightboxOverlay = document.getElementById('lightbox-overlay');
+    const lightboxImage = document.getElementById('lightbox-image');
+    const lightboxCloseBtn = document.getElementById('lightbox-close');
+
     let currentImageIndex = 0;
-    let images = [];
+    let galleryItems = [];
+
+    // --- NEW --- Function to pause all media
+    function pauseAllMedia() {
+        galleryContentWrapper.querySelectorAll('iframe').forEach(iframe => {
+            iframe.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*');
+        });
+        galleryContentWrapper.querySelectorAll('video').forEach(video => {
+            video.pause();
+        });
+    }
 
     function updateGallery() {
-        modalGallery.querySelectorAll('img, video').forEach((el, index) => {
+        const allMedia = galleryContentWrapper.querySelectorAll('img, video, .video-wrapper');
+        allMedia.forEach((el, index) => {
             el.classList.toggle('active', index === currentImageIndex);
         });
         galleryPrevBtn.classList.toggle('hidden', currentImageIndex === 0);
-        galleryNextBtn.classList.toggle('hidden', currentImageIndex === images.length - 1);
+        galleryNextBtn.classList.toggle('hidden', galleryItems.length <= 1 || currentImageIndex === galleryItems.length - 1);
     }
 
     galleryPrevBtn.addEventListener('click', () => {
         if (currentImageIndex > 0) {
+            pauseAllMedia(); // Pause current media before changing
             currentImageIndex--;
             updateGallery();
         }
     });
 
     galleryNextBtn.addEventListener('click', () => {
-        if (currentImageIndex < images.length - 1) {
+        if (currentImageIndex < galleryItems.length - 1) {
+            pauseAllMedia(); // Pause current media before changing
             currentImageIndex++;
             updateGallery();
         }
     });
 
+    function handleEscKey(event) {
+        if (event.key === 'Escape') {
+            if (!lightboxOverlay.classList.contains('hidden')) {
+                closeLightbox();
+            } else {
+                closeProjectModal();
+            }
+        }
+    }
+
+    function openLightbox(src) {
+        lightboxImage.src = src;
+        lightboxOverlay.classList.remove('hidden');
+    }
+
+    function closeLightbox() {
+        lightboxOverlay.classList.add('hidden');
+    }
+
+    galleryContentWrapper.addEventListener('click', (e) => {
+        if (e.target.tagName === 'IMG') {
+            openLightbox(e.target.src);
+        }
+    });
+
+    lightboxOverlay.addEventListener('click', (e) => {
+        if (e.target === lightboxOverlay) {
+            closeLightbox();
+        }
+    });
+    lightboxCloseBtn.addEventListener('click', closeLightbox);
+    
     function openProjectModal(projectId) {
         const project = projectsData.find(p => p.id === projectId);
         if (!project) return;
@@ -428,34 +479,27 @@ document.addEventListener('DOMContentLoaded', () => {
         modalTitle.textContent = project.title;
         modalDesc.innerHTML = project.longDescription;
         
-        let galleryHTML = '';
-        images = [...(project.videos || []), ...(project.images || [])];
+        galleryItems = [...(project.videos || []), ...(project.images || [])];
         
-        if (images.length > 0) {
-            galleryHTML += images.map((media, index) => {
-                if (media.endsWith('.mp4')) {
-                    return `<video controls autoplay muted loop playsinline class="rounded-lg border border-[var(--border)] w-full ${index === 0 ? 'active' : ''}">
-                                <source src="${media}" type="video/mp4">
-                                Your browser does not support the video tag.
-                            </video>`;
+        let galleryHTML = '';
+        if (galleryItems.length > 0) {
+            galleryHTML = galleryItems.map((media, index) => {
+                const isActive = index === 0 ? 'active' : '';
+                const youtubeEmbedUrl = getYoutubeEmbedUrl(media);
+
+                if (youtubeEmbedUrl) {
+                    return `<div class="video-wrapper ${isActive}"><iframe src="${youtubeEmbedUrl}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>`;
+                } else if (media.endsWith('.mp4')) {
+                    return `<video controls autoplay muted loop playsinline class="rounded-lg w-full ${isActive}"><source src="${media}" type="video/mp4"></video>`;
                 } else {
-                    return `<img src="${media}" alt="${project.title} screenshot" class="rounded-lg border border-[var(--border)] w-full ${index === 0 ? 'active' : ''}">`;
+                    return `<img src="${media}" alt="${project.title} screenshot" class="rounded-lg w-full ${isActive}">`;
                 }
             }).join('');
         }
         
-        modalGallery.innerHTML = galleryHTML;
+        galleryContentWrapper.innerHTML = galleryHTML;
         currentImageIndex = 0;
-
-        if (images.length > 1) {
-            galleryPrevBtn.classList.remove('hidden');
-            galleryNextBtn.classList.remove('hidden');
-            updateGallery();
-        } else {
-            galleryPrevBtn.classList.add('hidden');
-            galleryNextBtn.classList.add('hidden');
-        }
-
+        updateGallery();
 
         modalDetails.innerHTML = project.details.map(d => `<li class="flex justify-between border-b border-dashed border-zinc-800 py-2"><span class="font-medium text-slate-400">${d.label}</span><span class="text-white">${d.value}</span></li>`).join('');
         modalTags.innerHTML = project.tags.map(tag => `<span class="tech-tag">${tag}</span>`).join('');
@@ -482,6 +526,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function closeProjectModal() {
         document.body.classList.remove('modal-open');
         modalOverlay.classList.add('hidden');
+        pauseAllMedia(); // Pause media when closing the modal
         window.removeEventListener('keydown', handleEscKey);
     }
     
@@ -512,7 +557,6 @@ document.addEventListener('DOMContentLoaded', () => {
         mobileMenu.classList.toggle('hidden');
     });
     mobileMenu.querySelectorAll('a').forEach(link => {
-        // Don't close mobile menu for resume button
         if(link.id !== 'mobile-resume-btn') {
             link.addEventListener('click', () => {
                 mobileMenu.classList.add('hidden');
@@ -539,7 +583,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const slides = document.querySelectorAll('.about-slide');
     const mainProgressBar = document.getElementById('about-progress-bar');
     const slideIndicators = document.querySelectorAll('.slide-indicator');
-    const slideInterval = 5000; // 5 seconds
+    const slideInterval = 5000;
     let currentSlide = 0;
     let slideIntervalId;
 

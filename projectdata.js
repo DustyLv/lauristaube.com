@@ -4,7 +4,7 @@ export const projectsData = [
         title: 'Pitchforks & Paragraphs',
         description: 'A fast-paced medieval typing game where you cast word-spells to quell peasant riots. Built from scratch in Unity.',
         longDescription: `<p>Pitchforks & Paragraphs is a wave-based typing game where players must type words displayed on peasants' signs to cast spells and disperse them. The game features a dynamic difficulty system, a combo-based scoring mechanism that rewards speed and accuracy, and online leaderboards.</p>`,
-        images: ['https://i.imgur.com/cNbAvgM.jpeg','https://i.imgur.com/jZZUdZ5.jpeg','https://i.imgur.com/mBlEXsz.jpeg'],
+        images: [],
         details: [{ label: 'Platform', value: 'Web' }, { label: 'Type', value: 'Game' }],
         links: [{ label: 'Play on itch.io', url: 'https://dustylv.itch.io/pitchforksnparagraphs' }],
         icon: 'gamepad-2',
@@ -26,7 +26,7 @@ export const projectsData = [
         <br><br>
         Since these Android tablets would not have internet connection outside, the navigation was made from the ground-up. An offline map tiling system and a navigation line drawing system were created.
         </p>`,
-        images: ['https://placehold.co/1600x900/111111/a11a37?text=Lipke+Memorial+VR'],
+        images: [],
         details: [{ label: 'Platform', value: 'Mobile (Android)' }, { label: 'Type', value: 'EdTech' }],
         links: [{ label: 'Lipke memorial', url: 'https://lipke.lv/en/' }],
         icon: 'landmark',
@@ -41,7 +41,7 @@ export const projectsData = [
         <br><br>
         The model needed to be as performant as possible, so custom shaders were created for terrain texturing, to use Vertex Colors for masking. As well as, creation and use of texture atlases for signage, ground lines, etc.
         </p>`,
-        images: ['https://placehold.co/1600x900/111111/a11a37?text=Lipke+Memorial+VR'],
+        images: [],
         details: [{ label: 'Platform', value: 'VR Standalone' }, { label: 'Type', value: '3D Model' }],
         icon: 'plane',
         tags: ['Blender', 'Unity', 'Amplify Shader'],
@@ -52,7 +52,7 @@ export const projectsData = [
         title: 'Žanis Lipke Memorial VR Experience',
         description: 'A VR experience for the Žanis Lipke Memorial museum, allowing virtual exploration of the hideout used to save Jews in WWII.',
         longDescription: `<p>This VR application virtually recreates the woodsman's hut and the underground bunker where Žanis Lipke hid people during WWII. The experience allows users to explore the historical site and is used in the museum for educational purposes.</p>`,
-        images: ['https://placehold.co/1600x900/111111/a11a37?text=Lipke+Memorial+VR'],
+        images: ['/images/lipkevr/LipkesBunkurs.png','/images/lipkevr/Lipke_Game1.png','/images/lipkevr/Lipke_Game2.png','/images/lipkevr/Lipke_Game3.png','/images/lipkevr/Lipke_props1.png','/images/lipkevr/Lipke_props2.png'],
         details: [{ label: 'Platform', value: 'VR Standalone' }, { label: 'Type', value: 'Museum Exhibit' }],
         links: [{ label: 'Lipke memorial', url: 'https://lipke.lv/en/' }],
         icon: 'landmark',
@@ -69,8 +69,8 @@ export const projectsData = [
         This was made for the Unity development course while attending masters studies in Vidzeme University.
         Afterwards, I polished the game and submitted it to the Latvian Gamedev association organized game jam/competition 'BRSD 12' (Beidz runāt, sāc darīt | Stop talking, start doing). Came in 7th out of 15 submissions.
         </p>`,
-        images: ['https://placehold.co/1600x900/111111/a11a37?text=Volga+Heatwave+Game'],
-        videos: ['https://i.imgur.com/8pS1s7v.mp4'],
+        images: [],
+        videos: ['https://www.youtube.com/watch?v=VvSTKLORBHg'],
         details: [{ label: 'Platform', value: 'PC' }, { label: 'Type', value: 'Game' }],
         links: [
             { label: 'Play on itch.io', url: 'https://dustylv.itch.io/volga-heatwave' },
@@ -86,7 +86,7 @@ export const projectsData = [
         longDescription: `<p>This is a VR game for Ape museum in Latvia. The games purpose is to allow players to immerse themselves in an activity that's becoming quite rare - catching crayfish in a river. </p><br>
       <p>The player must catch as many crayfish as possible in the given time. They are presented with 3 crayfish traps in the river next to them and they must wait for the crayfish to go into them. When that happens, the player pulls up the trap and takes the crayfish and places it into the bag that's around their neck. <br>
       This process is repeated until the end of the game. The amount of crayfish in the bag is counted at the end of the game and shown on the scoreboard. Players can compete for the highest score.</p>`,
-        images: ['https://placehold.co/1600x900/111111/a11a37?text=Crayfish+Rush+Game'],
+        images: ['/images/crayfish/Game1.jpg','/images/crayfish/Game2.jpg','/images/crayfish/Game3.jpg','/images/crayfish/Game4.jpg'],
         details: [{ label: 'Platform', value: 'VR Standalone' }, { label: 'Type', value: 'Edutainment' }],
         icon: 'crab',
         tags: ['Unity', 'C#'],

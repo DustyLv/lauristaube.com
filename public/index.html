@@ -40,7 +40,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
     <link rel="stylesheet" href="stylesheet.css">
     <script type="module" src="script.js"></script>
-    <script type="module" src="projectdata.js"></script>
 </head>
 
 <body class="antialiased">
@@ -200,62 +199,16 @@
                     <div>
                         <h4 class="text-2xl font-bold text-white mb-8 reveal-text text-center md:text-left">Experience
                         </h4>
-                        <div class="relative experience-timeline">
-                            <div class="experience-item mb-8 reveal-text">
-                                <h5 class="text-xl font-medium text-slate-100">3D Artist</h5>
-                                <p class="text-slate-400 mb-2">Exonicus R&D
-                                </p>
-                                <p class="text-slate-400 mb-2">2025 - Present</p>
-                                <p>Creating 3D content for medical training and other applications, for military context.</p>
-                            </div>
-                            <div class="experience-item mb-8 reveal-text">
-                                <h5 class="text-xl font-medium text-slate-100">Unity Developer</h5>
-                                <p class="text-slate-400 mb-2">Vidzeme University of Applied Sciences | VRAR Laboratory
-                                </p>
-                                <p class="text-slate-400 mb-2">2019 - Present</p>
-                                <p>Developer for interactive VR training and educational modules, simulations and other
-                                    experiences. Responsible for architecture, logic implementation, graphical elements
-                                    and performance optimization.</p>
-                            </div>
-                            <div class="experience-item mb-8 reveal-text">
-                                <h5 class="text-xl font-medium text-slate-100">Lecturer</h5>
-                                <p class="text-slate-400 mb-2">Vidzeme University of Applied Sciences</p>
-                                <p class="text-slate-400 mb-2">2019 - Present</p>
-                                <p>Giving lectures on 3D modeling. Using Blender as the main tool. Giving a good
-                                    starting point for students to start creating 3D models for games.</p>
-                            </div>
-                            <div class="experience-item reveal-text">
-                                <h5 class="text-xl font-medium text-slate-100">Freelance Developer</h5>
-                                <p class="text-slate-400 mb-2">2018 - Present</p>
-                                <p>Developer for interactive VR and flatscreen experiences in Unity. Responsible for
-                                    architecture, logic implementation, graphical elements and performance optimization.
-                                </p>
-                            </div>
+                        <div id="experience-list" class="relative experience-timeline">
+                            <!-- Rendered from /api/content (managed in the CMS) -->
                         </div>
                     </div>
                     <!-- Education Column -->
                     <div>
                         <h4 class="text-2xl font-bold text-white mb-8 reveal-text text-center md:text-left">Education
                         </h4>
-                        <div class="relative experience-timeline">
-                            <div class="experience-item mb-8 reveal-text">
-                                <h5 class="text-xl font-medium text-slate-100">Mg.sc.comp. in Sociotechnic Systems
-                                    Modeling</h5>
-                                <p class="text-slate-400 mb-2">Vidzeme University of Applied Sciences</p>
-                                <p class="text-slate-400 mb-2">2016 - 2018</p>
-                                <p>Specialized in sociotechnic model output data visualization. Graduated with honors
-                                    after completing a thesis on an interactive simulation data visualization tool for
-                                    virtual reality made in Unity.</p>
-                            </div>
-
-                            <div class="experience-item mb-8 reveal-text">
-                                <h5 class="text-xl font-medium text-slate-100">B.Sc. in Computer Science</h5>
-                                <p class="text-slate-400 mb-2">Vidzeme University of Applied Sciences</p>
-                                <p class="text-slate-400 mb-2">2012 - 2016</p>
-                                <p>General computer science education with an interest in game development and computer
-                                    graphics. Graduated with honors after completing a thesis on creating a digital
-                                    board game in Unity.</p>
-                            </div>
+                        <div id="education-list" class="relative experience-timeline">
+                            <!-- Rendered from /api/content (managed in the CMS) -->
                         </div>
                     </div>
                 </div>

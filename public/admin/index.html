@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Portfolio CMS</title>
+    <link rel="icon" href="/favicon.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="admin.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <style>
+        [x-cloak] { display: none !important; }
+        .ql-container { font-size: 0.95rem; min-height: 12rem; }
+        .ql-toolbar.ql-snow, .ql-container.ql-snow { border-color: #e4e4e7; }
+        .ql-toolbar.ql-snow { border-radius: 0.5rem 0.5rem 0 0; }
+        .ql-container.ql-snow { border-radius: 0 0 0.5rem 0.5rem; }
+    </style>
+    <script>
+        tailwind.config = { theme: { extend: { colors: { accent: '#a11a37' } } } };
+    </script>
+    <style type="text/tailwindcss">
+        .field { @apply w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent; }
+        .label { @apply block text-xs font-semibold uppercase tracking-wide text-zinc-500 mb-1; }
+        .btn { @apply inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed; }
+        .btn-primary { @apply btn bg-accent text-white hover:bg-[#8a1530]; }
+        .btn-ghost { @apply btn text-zinc-600 hover:bg-zinc-100; }
+        .icon-btn { @apply inline-flex h-8 w-8 items-center justify-center rounded-md text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900 disabled:opacity-30 disabled:hover:bg-transparent; }
+        .card { @apply rounded-xl border border-zinc-200 bg-white p-5; }
+    </style>
+</head>
+
+<body class="bg-zinc-50 text-zinc-900 antialiased" x-data="cmsApp" x-cloak>
+
+    <!-- Status toast -->
+    <div x-show="status.visible" x-transition.opacity
+        class="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-lg px-4 py-2 text-sm font-medium shadow-lg"
+        :class="status.type === 'error' ? 'bg-red-600 text-white' : 'bg-zinc-900 text-white'" x-text="status.msg"></div>
+
+    <!-- Modal -->
+    <div x-show="modal.open" class="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4"
+        @keydown.escape.window="modal.open = false">
+        <div class="w-full max-w-md rounded-xl bg-white p-6 shadow-xl" @click.outside="modal.open = false">
+            <h2 class="text-lg font-bold" x-text="modal.title"></h2>
+            <p class="mt-2 text-sm text-zinc-600" x-text="modal.body"></p>
+            <div class="mt-6 flex flex-wrap justify-end gap-2">
+                <template x-for="action in modal.actions" :key="action.text">
+                    <button class="btn" :class="action.class" @click="action.fn()" x-text="action.text"></button>
+                </template>
+            </div>
+        </div>
+    </div>
+
+    <!-- No access (the page loaded, but the admin API refused the request) -->
+    <div x-show="view === 'denied'" class="flex min-h-screen items-center justify-center p-4">
+        <div class="card w-full max-w-md space-y-3">
+            <div class="flex items-center gap-3">
+                <img src="/favicon.png" alt="" class="h-9">
+                <h1 class="text-xl font-bold">Portfolio CMS</h1>
+            </div>
+            <p class="text-sm text-zinc-600">The CMS could not load: <span class="font-medium" x-text="deniedMessage"></span>.</p>
+            <p class="text-sm text-zinc-600">Sign-in is handled by Cloudflare Access. If you signed in with an account that
+                is not allowed, sign out and try again with the right one.</p>
+            <div class="flex gap-2">
+                <a href="/cdn-cgi/access/logout" class="btn-primary">Sign out</a>
+                <button class="btn-ghost" @click="location.reload()">Retry</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- App shell -->
+    <div x-show="view === 'list' || view === 'editor'">
+        <header class="sticky top-0 z-30 border-b border-zinc-200 bg-white/90 backdrop-blur">
+            <div class="mx-auto flex max-w-5xl items-center gap-4 px-4 py-3">
+                <button class="flex items-center gap-2 font-bold" @click="go('list')">
+                    <img src="/favicon.png" alt="" class="h-7"> Portfolio CMS
+                </button>
+                <div class="ml-auto flex items-center gap-1">
+                    <span class="mr-2 hidden text-sm text-zinc-500 sm:inline" x-text="user"></span>
+                    <a href="/" target="_blank" class="btn-ghost"><i data-lucide="external-link" class="h-4 w-4"></i> View site</a>
+                    <button class="btn-ghost" @click="go('logout')"><i data-lucide="log-out" class="h-4 w-4"></i> Sign out</button>
+                </div>
+            </div>
+        </header>
+
+        <main class="mx-auto max-w-5xl px-4 py-6">
+
+            <!-- ============ LIST ============ -->
+            <section x-show="view === 'list'">
+                <div class="mb-4 flex flex-wrap items-center gap-2">
+                    <nav class="flex rounded-lg border border-zinc-200 bg-white p-1 text-sm font-medium">
+                        <template x-for="t in [['projects','Projects'],['experience','Experience'],['education','Education']]" :key="t[0]">
+                            <button class="rounded-md px-3 py-1.5" @click="tab = t[0]"
+                                :class="tab === t[0] ? 'bg-zinc-900 text-white' : 'text-zinc-600 hover:bg-zinc-100'">
+                                <span x-text="t[1]"></span>
+                                <span class="ml-1 opacity-60" x-text="listFor(t[0]).length"></span>
+                            </button>
+                        </template>
+                    </nav>
+                    <button class="btn-primary ml-auto"
+                        @click="tab === 'projects' ? go('newProject') : go('newTimeline', tab)">
+                        <i data-lucide="plus" class="h-4 w-4"></i> New
+                    </button>
+                </div>
+
+                <p class="mb-3 text-sm text-zinc-500">
+                    The order here is the order on the site. Drafts are only visible in the CMS.
+                </p>
+
+                <div class="overflow-hidden rounded-xl border border-zinc-200 bg-white">
+                    <template x-for="(item, index) in listFor(tab)" :key="item.id">
+                        <div class="flex items-center gap-3 border-b border-zinc-100 px-3 py-2 last:border-b-0 hover:bg-zinc-50">
+                            <div class="flex flex-col">
+                                <button class="icon-btn h-6" title="Move up" :disabled="index === 0" @click="move(tab, index, -1)">
+                                    <i data-lucide="chevron-up" class="h-4 w-4"></i></button>
+                                <button class="icon-btn h-6" title="Move down" :disabled="index === listFor(tab).length - 1"
+                                    @click="move(tab, index, 1)"><i data-lucide="chevron-down" class="h-4 w-4"></i></button>
+                            </div>
+                            <template x-if="tab === 'projects'">
+                                <div class="h-12 w-20 flex-shrink-0 overflow-hidden rounded-md bg-zinc-100">
+                                    <template x-if="item.media.find(m => m.kind === 'upload')">
+                                        <img class="h-full w-full object-cover" loading="lazy"
+                                            :src="mediaUrl(item.media.find(m => m.kind === 'upload').r2_key)" alt="">
+                                    </template>
+                                </div>
+                            </template>
+                            <button class="min-w-0 flex-1 text-left"
+                                @click="tab === 'projects' ? go('project', item.id) : go('timeline', item.id)">
+                                <div class="flex items-center gap-2">
+                                    <span class="truncate font-medium" x-text="item.title"></span>
+                                    <span x-show="item.is_featured"
+                                        class="rounded-full bg-accent/10 px-2 py-0.5 text-xs font-semibold text-accent">Featured</span>
+                                    <span x-show="item.status === 'draft'"
+                                        class="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">Draft</span>
+                                </div>
+                                <div class="truncate text-sm text-zinc-500"
+                                    x-text="tab === 'projects' ? item.tags.join(' · ') : [item.organization, item.period].filter(Boolean).join(' · ')"></div>
+                            </button>
+                            <button class="icon-btn" title="Edit"
+                                @click="tab === 'projects' ? go('project', item.id) : go('timeline', item.id)">
+                                <i data-lucide="pencil" class="h-4 w-4"></i></button>
+                        </div>
+                    </template>
+                    <p x-show="!listFor(tab).length" class="p-6 text-center text-sm text-zinc-500">Nothing here yet.</p>
+                </div>
+            </section>
+
+            <!-- ============ EDITOR ============ -->
+            <section x-show="view === 'editor'">
+                <div class="mb-4 flex flex-wrap items-center gap-2">
+                    <button class="btn-ghost" @click="go('list')"><i data-lucide="arrow-left" class="h-4 w-4"></i> Back</button>
+                    <h1 class="text-lg font-bold"
+                        x-text="(activeRecord.id ? 'Edit ' : 'New ') + (editorType === 'project' ? 'project' : activeRecord.section + ' entry')"></h1>
+                    <span x-show="isDirty()" class="text-sm text-amber-700">Unsaved changes</span>
+                    <div class="ml-auto flex items-center gap-2">
+                        <button x-show="activeRecord.id" class="btn text-red-600 hover:bg-red-50" @click="confirmDelete()">
+                            <i data-lucide="trash-2" class="h-4 w-4"></i> Delete</button>
+                        <button class="btn-primary" :disabled="saving || uploading > 0" @click="handleSave()">
+                            <i data-lucide="save" class="h-4 w-4"></i>
+                            <span x-text="saving ? 'Saving…' : 'Save'"></span></button>
+                    </div>
+                </div>
+
+                <!-- Publish settings (both editors) -->
+                <div class="card mb-4 flex flex-wrap items-center gap-6">
+                    <label class="flex items-center gap-2 text-sm font-medium">
+                        <input type="checkbox" class="h-4 w-4 accent-[#a11a37]"
+                            :checked="activeRecord.status === 'published'"
+                            @change="activeRecord.status = $event.target.checked ? 'published' : 'draft'">
+                        Published
+                    </label>
+                    <template x-if="editorType === 'project'">
+                        <label class="flex items-center gap-2 text-sm font-medium">
+                            <input type="checkbox" class="h-4 w-4 accent-[#a11a37]" x-model="activeRecord.is_featured">
+                            Featured <span class="font-normal text-zinc-500">(large card at the top; replaces the current one; left out of the resume)</span>
+                        </label>
+                    </template>
+                    <template x-if="editorType === 'timeline'">
+                        <label class="flex items-center gap-2 text-sm font-medium">Section
+                            <select class="field w-auto" x-model="activeRecord.section">
+                                <option value="experience">Experience</option>
+                                <option value="education">Education</option>
+                            </select>
+                        </label>
+                    </template>
+                </div>
+
+                <!-- ---- Project editor ---- -->
+                <template x-if="editorType === 'project'">
+                    <div class="grid gap-4 lg:grid-cols-3">
+                        <div class="space-y-4 lg:col-span-2">
+                            <div class="card space-y-4">
+                                <div>
+                                    <label class="label">Title</label>
+                                    <input class="field" x-model="activeRecord.title">
+                                </div>
+                                <div>
+                                    <label class="label flex justify-between">Short description
+                                        <span class="font-normal normal-case"
+                                            :class="activeRecord.description.length > 200 ? 'text-amber-700' : ''"
+                                            x-text="activeRecord.description.length + ' / ~200'"></span></label>
+                                    <textarea class="field" rows="3" x-model="activeRecord.description"></textarea>
+                                    <p class="mt-1 text-xs text-zinc-500">Shown on the project card and in the resume.</p>
+                                </div>
+                                <div>
+                                    <label class="label">About the project</label>
+                                    <div x-richtext="activeRecord.long_description" data-rt-placeholder="Shown in the project pop-up…"></div>
+                                </div>
+                            </div>
+
+                            <!-- Media -->
+                            <div class="card space-y-4">
+                                <div class="flex items-center justify-between">
+                                    <h2 class="font-semibold">Gallery</h2>
+                                    <span x-show="uploading" class="text-sm text-zinc-500" x-text="`Uploading ${uploading}…`"></span>
+                                </div>
+                                <div class="space-y-2">
+                                    <template x-for="(m, i) in activeRecord.media" :key="(m.r2_key || m.url) + i">
+                                        <div class="flex items-center gap-3 rounded-lg border border-zinc-200 p-2">
+                                            <div class="h-14 w-24 flex-shrink-0 overflow-hidden rounded bg-zinc-100">
+                                                <img class="h-full w-full object-cover" alt=""
+                                                    :src="m.kind === 'upload' ? mediaUrl(m.r2_key) : `https://img.youtube.com/vi/${youtubeId(m.url)}/mqdefault.jpg`">
+                                            </div>
+                                            <div class="min-w-0 flex-1">
+                                                <div class="mb-1 flex items-center gap-1 text-xs text-zinc-500">
+                                                    <i :data-lucide="m.kind === 'upload' ? 'image' : 'youtube'" class="h-3.5 w-3.5"></i>
+                                                    <span class="truncate" x-text="m.kind === 'upload' ? m.r2_key.split('/').pop() : m.url"></span>
+                                                </div>
+                                                <input class="field py-1" placeholder="Caption / alt text (optional)" x-model="m.caption">
+                                            </div>
+                                            <button class="icon-btn" title="Move up" :disabled="i === 0" @click="moveItem(activeRecord.media, i, -1)">
+                                                <i data-lucide="arrow-up" class="h-4 w-4"></i></button>
+                                            <button class="icon-btn" title="Move down" :disabled="i === activeRecord.media.length - 1"
+                                                @click="moveItem(activeRecord.media, i, 1)"><i data-lucide="arrow-down" class="h-4 w-4"></i></button>
+                                            <button class="icon-btn hover:text-red-600" title="Remove" @click="activeRecord.media.splice(i, 1)">
+                                                <i data-lucide="x" class="h-4 w-4"></i></button>
+                                        </div>
+                                    </template>
+                                    <p x-show="!activeRecord.media.length" class="text-sm text-zinc-500">No images or videos yet.</p>
+                                </div>
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <label class="btn cursor-pointer border border-zinc-300 bg-white hover:bg-zinc-50">
+                                        <i data-lucide="upload" class="h-4 w-4"></i> Upload images
+                                        <input type="file" class="hidden" multiple accept="image/jpeg,image/png,image/webp,image/gif"
+                                            @change="uploadFiles($event.target.files); $event.target.value = ''">
+                                    </label>
+                                    <form class="flex min-w-[16rem] flex-1 gap-2" @submit.prevent="addVideo()">
+                                        <input class="field" placeholder="YouTube link" x-model="newVideo">
+                                        <button class="btn border border-zinc-300 bg-white hover:bg-zinc-50">Add video</button>
+                                    </form>
+                                </div>
+                                <p class="text-xs text-zinc-500">The first item opens first in the pop-up. Images are resized and
+                                    converted to WebP before upload. Removed images are deleted from storage when you save.</p>
+                            </div>
+                        </div>
+
+                        <div class="space-y-4">
+                            <div class="card space-y-3">
+                                <label class="label">Card icon</label>
+                                <div class="flex items-center gap-3">
+                                    <div class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-zinc-100">
+                                        <!-- Keyed on the name so a new <i> is made (and turned into an svg) on every change. -->
+                                        <template x-for="name in (iconExists(activeRecord.icon) ? [activeRecord.icon.trim()] : [])" :key="name">
+                                            <i :data-lucide="name" class="h-6 w-6"></i>
+                                        </template>
+                                    </div>
+                                    <input class="field" placeholder="e.g. gamepad-2" x-model="activeRecord.icon">
+                                </div>
+                                <p class="text-xs" :class="activeRecord.icon && !iconExists(activeRecord.icon) ? 'text-red-600' : 'text-zinc-500'">
+                                    <span x-show="activeRecord.icon && !iconExists(activeRecord.icon)">Lucide has no icon with this name. </span>
+                                    Browse names at <a href="https://lucide.dev/icons" target="_blank" class="underline">lucide.dev/icons</a>.
+                                </p>
+                            </div>
+
+                            <div class="card space-y-3">
+                                <label class="label">Technologies</label>
+                                <div class="flex flex-wrap gap-1.5">
+                                    <template x-for="(tag, i) in activeRecord.tags" :key="tag">
+                                        <span class="inline-flex items-center gap-1 rounded-full bg-accent/10 py-0.5 pl-2.5 pr-1 text-xs font-medium text-accent">
+                                            <span x-text="tag"></span>
+                                            <button class="rounded-full p-0.5 hover:bg-accent/20" @click="activeRecord.tags.splice(i, 1)">
+                                                <i data-lucide="x" class="h-3 w-3"></i></button>
+                                        </span>
+                                    </template>
+                                </div>
+                                <form @submit.prevent="addTag()">
+                                    <input class="field" placeholder="Add and press Enter" list="known-tags" x-model="newTag">
+                                    <datalist id="known-tags">
+                                        <template x-for="t in knownTags()" :key="t"><option :value="t"></option></template>
+                                    </datalist>
+                                </form>
+                            </div>
+
+                            <div class="card space-y-3">
+                                <label class="label">Details</label>
+                                <template x-for="(d, i) in activeRecord.details" :key="i">
+                                    <div class="flex gap-1.5">
+                                        <input class="field w-2/5" placeholder="Label" x-model="d.label">
+                                        <input class="field" placeholder="Value" x-model="d.value">
+                                        <button class="icon-btn flex-shrink-0 self-center hover:text-red-600" @click="activeRecord.details.splice(i, 1)">
+                                            <i data-lucide="x" class="h-4 w-4"></i></button>
+                                    </div>
+                                </template>
+                                <button class="btn-ghost -ml-2" @click="activeRecord.details.push({ label: '', value: '' })">
+                                    <i data-lucide="plus" class="h-4 w-4"></i> Add detail</button>
+                            </div>
+
+                            <div class="card space-y-3">
+                                <label class="label">Links</label>
+                                <template x-for="(l, i) in activeRecord.links" :key="i">
+                                    <div class="space-y-1.5 rounded-lg border border-zinc-200 p-2">
+                                        <div class="flex gap-1.5">
+                                            <input class="field" placeholder="Label, e.g. Play on itch.io" x-model="l.label">
+                                            <button class="icon-btn flex-shrink-0 self-center hover:text-red-600" @click="activeRecord.links.splice(i, 1)">
+                                                <i data-lucide="x" class="h-4 w-4"></i></button>
+                                        </div>
+                                        <input class="field" placeholder="https://…" x-model="l.url">
+                                    </div>
+                                </template>
+                                <button class="btn-ghost -ml-2" @click="activeRecord.links.push({ label: '', url: '' })">
+                                    <i data-lucide="plus" class="h-4 w-4"></i> Add link</button>
+                                <p class="text-xs text-zinc-500">Links need a label and a full http(s) address, or they are dropped on save.</p>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+
+                <!-- ---- Timeline editor ---- -->
+                <template x-if="editorType === 'timeline'">
+                    <div class="card max-w-2xl space-y-4">
+                        <div>
+                            <label class="label" x-text="activeRecord.section === 'education' ? 'Degree' : 'Role'"></label>
+                            <input class="field" x-model="activeRecord.title">
+                        </div>
+                        <div>
+                            <label class="label">Organization <span class="font-normal normal-case">(optional)</span></label>
+                            <input class="field" x-model="activeRecord.organization">
+                        </div>
+                        <div>
+                            <label class="label">Period</label>
+                            <input class="field" placeholder="2019 - Present" x-model="activeRecord.period">
+                        </div>
+                        <div>
+                            <label class="label">Description</label>
+                            <textarea class="field" rows="4" x-model="activeRecord.description"></textarea>
+                            <p class="mt-1 text-xs text-zinc-500">Shown on the site.</p>
+                        </div>
+                        <div x-show="activeRecord.section === 'experience'" class="space-y-2">
+                            <label class="label">Resume bullet points</label>
+                            <template x-for="(b, i) in activeRecord.resume_bullets" :key="i">
+                                <div class="flex gap-1.5">
+                                    <input class="field" x-model="activeRecord.resume_bullets[i]">
+                                    <button class="icon-btn flex-shrink-0 self-center" :disabled="i === 0"
+                                        @click="moveItem(activeRecord.resume_bullets, i, -1)"><i data-lucide="arrow-up" class="h-4 w-4"></i></button>
+                                    <button class="icon-btn flex-shrink-0 self-center hover:text-red-600"
+                                        @click="activeRecord.resume_bullets.splice(i, 1)"><i data-lucide="x" class="h-4 w-4"></i></button>
+                                </div>
+                            </template>
+                            <form @submit.prevent="addBullet()">
+                                <input class="field" placeholder="Add a bullet and press Enter" x-model="newBullet">
+                            </form>
+                            <p class="text-xs text-zinc-500">The resume uses these; with none, it shows the description as a single bullet.</p>
+                        </div>
+                    </div>
+                </template>
+            </section>
+        </main>
+    </div>
+
+    <div x-show="view === 'loading'" class="flex min-h-screen items-center justify-center text-sm text-zinc-500">Loading…</div>
+</body>
+
+</html>

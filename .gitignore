@@ -1,0 +1,8 @@
+node_modules/
+.wrangler/
+.dev.vars
+*.log
+.DS_Store
+# D1 exports contain the access_keys rows
+backup*.sql
+scripts/seed.sql

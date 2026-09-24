@@ -1,0 +1,31 @@
+# Cloudflare Pages project for lauristaube.com: static site in ./public,
+# backend in ./functions (Pages Functions).
+# `name` must match the existing Pages project (`npx wrangler pages project list`).
+name = "lauristaube-com"
+pages_build_output_dir = "./public"
+compatibility_date = "2025-09-01"
+
+# Projects, project media, experience/education timeline, admin logins.
+# Schema: migrations/.
+[[d1_databases]]
+binding = "DB"
+database_name = "portfolio-db"
+database_id = "bad7b50f-7633-4fc7-b3da-9d4f99da4c39"
+migrations_dir = "migrations"
+
+# Uploaded project images, served through /api/media/<key>.
+[[r2_buckets]]
+binding = "MEDIA"
+bucket_name = "portfolio-media"
+
+# Admin sessions, login-failure counters and the cached /api/content response.
+[[kv_namespaces]]
+binding = "KV"
+id = "9139fca4e20d41d59e48c326f5af89d9"
+
+# Cloudflare Access protects /admin and /api/admin/* (see verifyAccess in
+# functions/api/_utils.js). These identify the Access application; they are not secrets.
+[vars]
+ACCESS_TEAM_DOMAIN = "lauristaube.cloudflareaccess.com"
+ACCESS_AUD = "0a5b168fbbc5008eac5849d8c8219f0bc5de2eec06b359ac39c958f43cbdef77,d31d0f8c91e3d6fb38c8cb5e392e8b7f94850ae3248f7d71f24791a15f8afe7e"  # CMS app, Pages previews app
+ACCESS_EMAILS = "lauristaube@gmail.com"

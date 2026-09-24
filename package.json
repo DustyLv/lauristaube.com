@@ -1,0 +1,10 @@
+{
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler pages dev public --port 8788 --persist-to=.wrangler/state"
+  },
+  "devDependencies": {
+    "wrangler": "4.84.1"
+  }
+}

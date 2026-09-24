@@ -1,0 +1,179 @@
+// One-time move of the hardcoded content into D1 + R2.
+//
+//   node scripts/migrate-content.mjs --local            local dev state (.wrangler/state)
+//   node scripts/migrate-content.mjs --remote           production
+//   add --sql-only to only write scripts/seed.sql, --skip-images to leave R2 alone
+//
+// Reads projectdata.js (projects) and the timeline below (transcribed from the
+// old index.html and resume templates). Writes scripts/seed.sql, runs it with
+// `wrangler d1 execute`, then uploads every referenced image from images/ to
+// the MEDIA bucket under projects/<folder>/<file>.
+//
+// The seed replaces all projects and timeline entries. Against --remote it
+// refuses to run when projects already exist, unless --force is given.
+
+import { spawnSync } from "node:child_process";
+import { existsSync, writeFileSync } from "node:fs";
+import { extname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+import { projectsData } from "../projectdata.js";
+
+const ROOT = fileURLToPath(new URL("..", import.meta.url));
+const DB_NAME = "portfolio-db";
+const BUCKET = "portfolio-media";
+const SEED_FILE = join(ROOT, "scripts", "seed.sql");
+
+const args = new Set(process.argv.slice(2));
+const target = args.has("--remote") ? "--remote" : args.has("--local") ? "--local" : null;
+if (!target && !args.has("--sql-only")) {
+    console.error("Pass --local or --remote (or --sql-only).");
+    process.exit(1);
+}
+const persist = target === "--local" ? ["--persist-to=.wrangler/state"] : [];
+
+const timeline = [
+    {
+        section: "experience", title: "3D Artist", organization: "Exonicus R&D", period: "2025 - Present",
+        description: "Creating 3D content for medical training and other applications, for military context.",
+        resume_bullets: []
+    },
+    {
+        section: "experience", title: "Unity Developer",
+        organization: "Vidzeme University of Applied Sciences | VRAR Laboratory", period: "2019 - Present",
+        description: "Developer for interactive VR training and educational modules, simulations and other experiences. Responsible for architecture, logic implementation, graphical elements and performance optimization.",
+        resume_bullets: [
+            "Developer for interactive VR training and educational modules, simulations and other experiences.",
+            "Responsible for architecture, logic implementation, graphical elements and performance optimization."
+        ]
+    },
+    {
+        section: "experience", title: "Lecturer", organization: "Vidzeme University of Applied Sciences", period: "2019 - Present",
+        description: "Giving lectures on 3D modeling. Using Blender as the main tool. Giving a good starting point for students to start creating 3D models for games.",
+        resume_bullets: [
+            "Giving lectures on 3D modeling.",
+            "Giving a good starting point for students to start creating 3D models for games.",
+            "Using Blender as the main tool."
+        ]
+    },
+    {
+        section: "experience", title: "Freelance Developer", organization: null, period: "2018 - Present",
+        description: "Developer for interactive VR and flatscreen experiences in Unity. Responsible for architecture, logic implementation, graphical elements and performance optimization.",
+        resume_bullets: [
+            "Developer for interactive VR and flatscreen experiences in Unity.",
+            "Responsible for architecture, logic implementation, graphical elements and performance optimization."
+        ]
+    },
+    {
+        section: "education", title: "Mg.sc.comp. in Sociotechnic Systems Modeling",
+        organization: "Vidzeme University of Applied Sciences", period: "2016 - 2018",
+        description: "Specialized in sociotechnic model output data visualization. Graduated with honors after completing a thesis on an interactive simulation data visualization tool for virtual reality made in Unity.",
+        resume_bullets: []
+    },
+    {
+        section: "education", title: "B.Sc. in Computer Science",
+        organization: "Vidzeme University of Applied Sciences", period: "2012 - 2016",
+        description: "General computer science education with an interest in game development and computer graphics. Graduated with honors after completing a thesis on creating a digital board game in Unity.",
+        resume_bullets: []
+    }
+];
+
+const CONTENT_TYPES = { ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".webp": "image/webp", ".gif": "image/gif" };
+
+const sql = v => v === null || v === undefined ? "NULL"
+    : typeof v === "number" ? String(v)
+    : `'${String(v).replace(/'/g, "''")}'`;
+
+// "/images/zaao/Game1.png" or "images/zaao/Game1.png" -> local file + R2 key
+function imageEntry(path) {
+    const rel = path.replace(/^\/+/, "");
+    return { file: join(ROOT, rel), key: `projects/${rel.replace(/^images\//, "")}` };
+}
+
+const lines = [
+    "-- Generated by scripts/migrate-content.mjs. Replaces all projects and timeline entries.",
+    "DELETE FROM project_media;",
+    "DELETE FROM projects;",
+    "DELETE FROM timeline;"
+];
+const images = [];
+let mediaId = 0;
+
+projectsData.forEach((p, position) => {
+    lines.push(`INSERT INTO projects (id, title, description, long_description, icon, tags, details, links, is_featured, status, position) VALUES (${[
+        p.id, p.title, p.description, p.longDescription ? p.longDescription.trim() : null, p.icon,
+        JSON.stringify(p.tags || []), JSON.stringify(p.details || []), JSON.stringify(p.links || []),
+        p.isFeatured ? 1 : 0, "published", position
+    ].map(sql).join(", ")});`);
+
+    // Same gallery order as before: videos first, then images.
+    let mediaPosition = 0;
+    for (const url of p.videos || []) {
+        if (!/^https?:\/\//.test(url)) {
+            console.warn(`! ${p.id}: skipped local video ${url} (only YouTube links are supported)`);
+            continue;
+        }
+        lines.push(`INSERT INTO project_media (id, project_id, kind, url, position) VALUES (${[
+            `m${++mediaId}`, p.id, "video", url, mediaPosition++
+        ].map(sql).join(", ")});`);
+    }
+    for (const path of p.images || []) {
+        const img = imageEntry(path);
+        if (!existsSync(img.file)) {
+            console.warn(`! ${p.id}: skipped missing image ${path}`);
+            continue;
+        }
+        images.push(img);
+        lines.push(`INSERT INTO project_media (id, project_id, kind, r2_key, position) VALUES (${[
+            `m${++mediaId}`, p.id, "upload", img.key, mediaPosition++
+        ].map(sql).join(", ")});`);
+    }
+});
+
+const sectionPositions = {};
+timeline.forEach((t, i) => {
+    const position = sectionPositions[t.section] = (sectionPositions[t.section] ?? -1) + 1;
+    lines.push(`INSERT INTO timeline (id, section, title, organization, period, description, resume_bullets, status, position) VALUES (${[
+        `t${i + 1}`, t.section, t.title, t.organization, t.period, t.description,
+        JSON.stringify(t.resume_bullets), "published", position
+    ].map(sql).join(", ")});`);
+});
+
+writeFileSync(SEED_FILE, lines.join("\n") + "\n");
+console.log(`Wrote ${SEED_FILE}: ${projectsData.length} projects, ${mediaId} media rows, ${timeline.length} timeline entries.`);
+if (args.has("--sql-only")) process.exit(0);
+
+function wrangler(...wranglerArgs) {
+    const result = spawnSync("npx", ["wrangler", ...wranglerArgs], {
+        cwd: ROOT, shell: true, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"]
+    });
+    if (result.status !== 0) {
+        console.error(result.stdout, result.stderr);
+        throw new Error(`wrangler ${wranglerArgs.slice(0, 3).join(" ")} failed`);
+    }
+    return result.stdout;
+}
+
+if (target === "--remote" && !args.has("--force")) {
+    const out = wrangler("d1", "execute", DB_NAME, "--remote", "--json", "--command", `"SELECT COUNT(*) AS n FROM projects"`);
+    const count = JSON.parse(out)[0].results[0].n;
+    if (count > 0) {
+        console.error(`The remote database already has ${count} projects. Re-run with --force to replace them.`);
+        process.exit(1);
+    }
+}
+
+console.log(`Seeding ${DB_NAME} (${target})...`);
+wrangler("d1", "execute", DB_NAME, target, ...persist, "--yes", `--file="${SEED_FILE}"`);
+// The public site reads a KV-cached copy; drop it so the new content shows.
+wrangler("kv", "key", "delete", "--binding", "KV", "content", target, ...persist);
+
+if (args.has("--skip-images")) process.exit(0);
+
+console.log(`Uploading ${images.length} images to ${BUCKET} (${target})...`);
+images.forEach((img, i) => {
+    const type = CONTENT_TYPES[extname(img.file).toLowerCase()];
+    wrangler("r2", "object", "put", `"${BUCKET}/${img.key}"`, `--file="${img.file}"`,
+        `--content-type=${type}`, target, ...persist);
+    console.log(`  ${i + 1}/${images.length} ${img.key}`);
+});
+console.log("Done.");

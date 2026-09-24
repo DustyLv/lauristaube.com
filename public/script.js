@@ -1,7 +1,10 @@
-import {projectsData} from './projectdata.js'
 let currentPage = 1;
 const projectsPerPage = 4;
+// Filled from /api/content (managed in the CMS at /admin).
+let projects = [];
 let regularProjects = [];
+let experience = [];
+let education = [];
 
 const email = "lauristaube@gmail.com";
 const number = "(+371) 2 867 44 29";
@@ -10,46 +13,68 @@ const website = "lauristaube.com";
 
 const summary = "I am a Unity developer and a 3D artist with quite a few projects under my belt. I specialize in Virtual Reality, but enjoy taking up different types of projects. My passion is to create meaningful interactive applications and games.<br><br>I’m detail-oriented and love taking on problems, so I strive to make the best whenever it’s possible.";
 
+// Escapes plain-text CMS fields for use inside HTML. long_description is HTML on purpose and is not escaped.
+function esc(value) {
+    return String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+function mediaUrl(r2Key) {
+    return `/api/media/${r2Key.split('/').map(encodeURIComponent).join('/')}`;
+}
+
 // --- RESUME GENERATOR LOGIC ---
-function generateResume() {
-    
-    const output = document.getElementById('resume-output');
-    const isDarkMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+const RESUME_THEMES = {
+    light: { page: 'bg-white text-gray-800', sidebar: 'bg-gray-50', name: 'text-gray-900', heading: 'text-gray-900', body: 'text-gray-700', muted: 'text-gray-600', meta: 'text-gray-500' },
+    dark: { page: 'bg-gray-900 text-gray-200', sidebar: 'bg-gray-800', name: 'text-white', heading: 'text-gray-100', body: 'text-gray-300', muted: 'text-gray-400', meta: 'text-gray-400' }
+};
+
+function resumeTemplate(t) {
+    const sectionTitle = title => `<h2 class="text-2xl font-bold border-b-2 pb-2 mb-4" style="font-family: 'Lora', serif; border-color: var(--accent); color: var(--accent);">${title}</h2>`;
+    const sidebarTitle = title => `<h2 class="text-lg font-bold uppercase tracking-wider" style="color: var(--accent);">${title}</h2>`;
 
     // --- SKILLS ---
-    const skills = [...new Set(projectsData.flatMap(p => p.tags))];
-    const skillsHTML = `<div class="flex flex-wrap gap-2">${skills.map(skill => `<span class="border text-xs font-semibold mr-2 px-2.5 py-1 rounded-full" style="color: var(--accent); border-color: var(--accent);">${skill}</span>`).join('')}</div>`;
+    const skills = [...new Set(projects.flatMap(p => p.tags))];
+    const skillsHTML = `<div class="flex flex-wrap gap-2">${skills.map(skill => `<span class="border text-xs font-semibold mr-2 px-2.5 py-1 rounded-full" style="color: var(--accent); border-color: var(--accent);">${esc(skill)}</span>`).join('')}</div>`;
+
+    const educationHTML = education.map(e => `
+        <div class="mt-4">
+            <h3 class="text-md font-bold ${t.heading}">${esc(e.title)}</h3>
+            ${e.organization ? `<p class="text-sm ${t.muted}">${esc(e.organization)}</p>` : ''}
+            <p class="text-sm ${t.muted}">${esc(e.period)}</p>
+        </div>
+    `).join('');
+
+    const experienceHTML = experience.map(e => {
+        const bullets = e.resume_bullets.length ? e.resume_bullets : [e.description].filter(Boolean);
+        return `
+        <div class="mb-6">
+            <h3 class="text-lg font-bold ${t.heading}">${esc(e.title)}</h3>
+            ${e.organization ? `<p class="text-md ${t.meta} italic">${esc(e.organization)}</p>` : ''}
+            <p class="text-md ${t.meta} italic">${esc(e.period)}</p>
+            <ul class="list-disc list-inside ${t.body} mt-1 text-sm space-y-1">
+                ${bullets.map(b => `<li>${esc(b)}</li>`).join('')}
+            </ul>
+        </div>`;
+    }).join('');
 
     // --- PROJECTS ---
-    const projects = projectsData.filter(p => !p.isFeatured);
-    
-    const lightProjectsHTML = projects.map(p => `
+    const projectsHTML = projects.filter(p => !p.is_featured).map(p => `
         <div class="mb-4 break-inside-avoid">
-            <h3 class="text-lg font-bold text-gray-900">${p.title}</h3>
-            <p class="text-sm text-gray-600 italic mb-1">${p.tags.join(' · ')}</p>
-            <p class="text-gray-700 text-sm">${p.description}</p>
+            <h3 class="text-lg font-bold ${t.heading}">${esc(p.title)}</h3>
+            <p class="text-sm ${t.muted} italic mb-1">${p.tags.map(esc).join(' · ')}</p>
+            <p class="${t.body} text-sm">${esc(p.description)}</p>
         </div>
     `).join('');
 
-    const darkProjectsHTML = projects.map(p => `
-         <div class="mb-4 break-inside-avoid">
-            <h3 class="text-lg font-bold text-gray-100">${p.title}</h3>
-            <p class="text-sm text-gray-400 italic mb-1">${p.tags.join(' · ')}</p>
-            <p class="text-gray-300 text-sm">${p.description}</p>
-        </div>
-    `).join('');
-    
-
-    // --- TEMPLATES ---
-    const lightTemplate = `
-        <div class="bg-white text-gray-800" style="font-family: 'Inter', sans-serif;">
+    return `
+        <div class="${t.page}" style="font-family: 'Inter', sans-serif;">
             <div class="grid grid-cols-3">
-                <div class="col-span-1 bg-gray-50 p-8">
-                    <h1 class="text-4xl font-bold text-gray-900" style="font-family: 'Lora', serif;">Lauris Taube</h1>
+                <div class="col-span-1 ${t.sidebar} p-8">
+                    <h1 class="text-4xl font-bold ${t.name}" style="font-family: 'Lora', serif;">Lauris Taube</h1>
                     <p class="text-xl mt-2" style="color: var(--accent);">Creative Technologist</p>
                     <div class="mt-10">
-                        <h2 class="text-lg font-bold uppercase tracking-wider" style="color: var(--accent);">Contact</h2>
-                        <div class="mt-4 space-y-2 text-sm text-gray-700">
+                        ${sidebarTitle('Contact')}
+                        <div class="mt-4 space-y-2 text-sm ${t.body}">
                             <p>${email}</p>
                             <p>${number}</p>
                             <p>${location}</p>
@@ -57,148 +82,38 @@ function generateResume() {
                         </div>
                     </div>
                     <div class="mt-10">
-                        <h2 class="text-lg font-bold uppercase tracking-wider" style="color: var(--accent);">Skills</h2>
+                        ${sidebarTitle('Skills')}
                         <div class="mt-4">${skillsHTML}</div>
                     </div>
                     <div class="mt-10">
-                        <h2 class="text-lg font-bold uppercase tracking-wider" style="color: var(--accent);">Education</h2>
-                        <div class="mt-4">
-                            <h3 class="text-md font-bold text-gray-900">Mg.sc.comp. in Sociotechnic Systems Modeling</h3>
-                            <p class="text-sm text-gray-600">Vidzeme University of Applied Sciences</p>
-                            <p class="text-sm text-gray-600">2016 - 2018</p>
-                        </div>
-                        <div class="mt-4">
-                            <h3 class="text-md font-bold text-gray-900">B.Sc. in Computer Science</h3>
-                            <p class="text-sm text-gray-600">Vidzeme University of Applied Sciences</p>
-                            <p class="text-sm text-gray-600">2012 - 2016</p>
-                        </div>
+                        ${sidebarTitle('Education')}
+                        ${educationHTML}
                     </div>
                 </div>
                 <div class="col-span-2 p-8">
                     <section>
-                        <h2 class="text-2xl font-bold border-b-2 pb-2 mb-4" style="font-family: 'Lora', serif; border-color: var(--accent); color: var(--accent);">Summary</h2>
-                        <p class="text-gray-700">${summary}</p>
+                        ${sectionTitle('Summary')}
+                        <p class="${t.body}">${summary}</p>
                     </section>
                     <section class="mt-8">
-                        <h2 class="text-2xl font-bold border-b-2 pb-2 mb-4" style="font-family: 'Lora', serif; border-color: var(--accent); color: var(--accent);">Professional Experience</h2>
-                        <div>
-                        <h3 class="text-lg font-bold text-gray-900">Unity Developer</h3>
-                        <p class="text-md text-gray-500 italic">Vidzeme University of Applied Sciences | VRAR Laboratory</p>
-                        <p class="text-md text-gray-500 italic">2019 - Present</p>
-                        <ul class="list-disc list-inside text-gray-700 mt-1 text-sm space-y-1">
-                            <li>Developer for interactive VR training and educational modules, simulations and other experiences.</li>
-                            <li>Responsible for architecture, logic implementation, graphical elements and performance optimization.</li>
-                        </ul>
-                        </div>
-                        <div>
-                        <h3 class="text-lg font-bold text-gray-900">Lecturer</h3>
-                        <p class="text-md text-gray-500 italic">Vidzeme University of Applied Sciences</p>
-                        <p class="text-md text-gray-500 italic">2019 - Present</p>
-                        <p>Giving lectures on 3D modeling. Using Blender as the main tool. Giving a good starting point for students to start creating 3D models for games.</p>
-                        <ul class="list-disc list-inside text-gray-700 mt-1 text-sm space-y-1">
-                            <li>Giving lectures on 3D modeling.</li>
-                            <li>Giving a good starting point for students to start creating 3D models for games.</li>
-                            <li>Using Blender as the main tool.</li>
-                        </ul>
-                        </div>
-                        <div>
-                        <h3 class="text-lg font-bold text-gray-900">Freelance Developer</h3>
-                        <p class="text-md text-gray-500 italic">2018 - Present</p>
-                        <ul class="list-disc list-inside text-gray-700 mt-1 text-sm space-y-1">
-                            <li>Developer for interactive VR and flatscreen experiences in Unity.</li>
-                            <li>Responsible for architecture, logic implementation, graphical elements and performance optimization.</li>
-                        </ul>
-                        </div>
+                        ${sectionTitle('Professional Experience')}
+                        ${experienceHTML}
                     </section>
                     <section class="mt-8">
-                        <h2 class="text-2xl font-bold border-b-2 pb-2 mb-4" style="font-family: 'Lora', serif; border-color: var(--accent); color: var(--accent);">Selected Projects</h2>
-                        ${lightProjectsHTML}
+                        ${sectionTitle('Selected Projects')}
+                        ${projectsHTML}
                     </section>
                 </div>
             </div>
         </div>
     `;
-    const darkTemplate = `
-        <div class="bg-gray-900 text-gray-200" style="font-family: 'Inter', sans-serif;">
-            <div class="grid grid-cols-3">
-                <div class="col-span-1 bg-gray-800 p-8">
-                    <h1 class="text-4xl font-bold text-white" style="font-family: 'Lora', serif;">Lauris Taube</h1>
-                    <p class="text-xl mt-2" style="color: var(--accent);">Creative Technologist</p>
-                    <div class="mt-10">
-                        <h2 class="text-lg font-bold uppercase tracking-wider" style="color: var(--accent);">Contact</h2>
-                        <div class="mt-4 space-y-2 text-sm text-gray-300">
-                            <p>${email}</p>
-                            <p>${number}</p>
-                            <p>${location}</p>
-                            <p>${website}</p>
-                        </div>
-                    </div>
-                    <div class="mt-10">
-                        <h2 class="text-lg font-bold uppercase tracking-wider" style="color: var(--accent);">Skills</h2>
-                        <div class="mt-4">${skillsHTML}</div>
-                    </div>
-                    <div class="mt-10">
-                        <h2 class="text-lg font-bold uppercase tracking-wider" style="color: var(--accent);">Education</h2>
+}
 
-                        <div class="mt-4">
-                            <h3 class="text-md font-bold text-gray-100">Mg.sc.comp. in Sociotechnic Systems Modeling</h3>
-                            <p class="text-sm text-gray-400">Vidzeme University of Applied Sciences</p>
-                            <p class="text-sm text-gray-400">2016 - 2018</p>
-                        </div>
-                        <div class="mt-4">
-                            <h3 class="text-md font-bold text-gray-100">B.Sc. in Computer Science</h3>
-                            <p class="text-sm text-gray-400">Vidzeme University of Applied Sciences</p>
-                            <p class="text-sm text-gray-400">2012 - 2016</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-span-2 p-8">
-                    <section>
-                        <h2 class="text-2xl font-bold border-b-2 pb-2 mb-4" style="font-family: 'Lora', serif; border-color: var(--accent); color: var(--accent);">Summary</h2>
-                        <p class="text-gray-300">${summary}</p>
-                    </section>
-                    <section class="mt-8">
-                        <h2 class="text-2xl font-bold border-b-2 pb-2 mb-4" style="font-family: 'Lora', serif; border-color: var(--accent); color: var(--accent);">Professional Experience</h2>
-                        <div class="mb-6">
-                            <h3 class="text-lg font-bold text-gray-100">Unity Developer</h3>
-                            <p class="text-md text-gray-400 italic">Vidzeme University of Applied Sciences | VRAR Laboratory</p>
-                            <p class="text-md text-gray-400 italic">2019 - Present</p>
-                            <ul class="list-disc list-inside text-gray-300 mt-1 text-sm space-y-1">
-                                <li>Developer for interactive VR training and educational modules, simulations and other experiences.</li>
-                                <li>Responsible for architecture, logic implementation, graphical elements and performance optimization.</li>
-                            </ul>
-                        </div>
-                        <div class="mb-6">
-                            <h3 class="text-lg font-bold text-gray-100">Lecturer</h3>
-                            <p class="text-md text-gray-400 italic">Vidzeme University of Applied Sciences</p>
-                            <p class="text-md text-gray-400 italic">2019 - Present</p>
-                            <ul class="list-disc list-inside text-gray-300 mt-1 text-sm space-y-1">
-                                <li>Giving lectures on 3D modeling.</li>
-                                <li>Giving a good starting point for students to start creating 3D models for games.</li>
-                                <li>Using Blender as the main tool.</li>
-                            </ul>
-                        </div>
-                        <div class="mb-6">
-                            <h3 class="text-lg font-bold text-gray-100">Freelance Developer</h3>
-                            <p class="text-md text-gray-400 italic">2018 - Present</p>
-                            <ul class="list-disc list-inside text-gray-300 mt-1 text-sm space-y-1">
-                                <li>Developer for interactive VR and flatscreen experiences in Unity.</li>
-                                <li>Responsible for architecture, logic implementation, graphical elements and performance optimization.</li>
-                            </ul>
-                        </div>
-                    </section>
-                    <section class="mt-8">
-                        <h2 class="text-2xl font-bold border-b-2 pb-2 mb-4" style="font-family: 'Lora', serif; border-color: var(--accent); color: var(--accent);">Selected Projects</h2>
-                        ${darkProjectsHTML}
-                    </section>
-                </div>
-            </div>
-        </div>
-    `;
-    console.log(darkTemplate);
+function generateResume() {
+    const output = document.getElementById('resume-output');
+    const isDarkMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    output.innerHTML = resumeTemplate(isDarkMode ? RESUME_THEMES.dark : RESUME_THEMES.light);
 
-    output.innerHTML = isDarkMode ? darkTemplate : lightTemplate;
-    
     setTimeout(() => {
         window.print();
     }, 200);
@@ -227,15 +142,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const generateBtn = document.getElementById('generate-resume-btn');
     if(generateBtn) generateBtn.addEventListener('click', generateResume);
-    
-    const featuredProject = projectsData.find(p => p.isFeatured);
-    regularProjects = projectsData.filter(p => !p.isFeatured);
-
-    if(featuredProject) {
-        renderFeaturedProject(featuredProject);
-    }
-    
-    renderPaginatedProjects();
 
     const cursorGlow = document.getElementById('cursor-glow');
     if (cursorGlow && window.matchMedia('(pointer: fine)').matches) {
@@ -249,20 +155,59 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    async function loadContent() {
+        try {
+            const response = await fetch('/api/content');
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            ({ projects, experience, education } = await response.json());
+        } catch (err) {
+            console.error('Could not load content', err);
+            document.getElementById('projects-grid').innerHTML =
+                '<p class="col-span-full text-center text-slate-400">Projects could not be loaded right now. Please try again later.</p>';
+            setupRevealText();
+            return;
+        }
+
+        const featuredProject = projects.find(p => p.is_featured);
+        regularProjects = projects.filter(p => !p.is_featured);
+
+        if(featuredProject) {
+            renderFeaturedProject(featuredProject);
+        }
+
+        renderPaginatedProjects();
+        renderTimeline('experience-list', experience);
+        renderTimeline('education-list', education);
+        setupRevealText();
+    }
+
+    function renderTimeline(containerId, entries) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+        container.innerHTML = entries.map((entry, i) => `
+            <div class="experience-item ${i < entries.length - 1 ? 'mb-8' : ''} reveal-text">
+                <h5 class="text-xl font-medium text-slate-100">${esc(entry.title)}</h5>
+                ${entry.organization ? `<p class="text-slate-400 mb-2">${esc(entry.organization)}</p>` : ''}
+                <p class="text-slate-400 mb-2">${esc(entry.period)}</p>
+                ${entry.description ? `<p>${esc(entry.description)}</p>` : ''}
+            </div>
+        `).join('');
+    }
+
     function renderFeaturedProject(project) {
         const container = document.getElementById('featured-project-container');
         if (!container || !project) return;
         
-        const tagsHTML = project.tags.map(tag => `<span class="tech-tag">${tag}</span>`).join('');
+        const tagsHTML = project.tags.map(tag => `<span class="tech-tag">${esc(tag)}</span>`).join('');
 
         container.innerHTML = `
-            <div class="spotlight-card rounded-2xl p-8 col-span-1 md:col-span-2" data-project-id="${project.id}">
+            <div class="spotlight-card rounded-2xl p-8 col-span-1 md:col-span-2" data-project-id="${esc(project.id)}">
                 <div class="project-icon">
-                    <i data-lucide="${project.icon}" class="w-8 h-8"></i>
+                    <i data-lucide="${esc(project.icon)}" class="w-8 h-8"></i>
                 </div>
                 <div>
-                    <h4 class="text-3xl font-bold text-white mb-2 project-title">${project.title}</h4>
-                    <p class="mb-4 max-w-xl project-desc">${project.description}</p>
+                    <h4 class="text-3xl font-bold text-white mb-2 project-title">${esc(project.title)}</h4>
+                    <p class="mb-4 max-w-xl project-desc">${esc(project.description)}</p>
                     <div class="flex flex-wrap gap-2 project-tags">
                         ${tagsHTML}
                     </div>
@@ -281,15 +226,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
         let projectsHTML = '';
         paginatedItems.forEach(project => {
-            const tagsHTML = project.tags.map(tag => `<span class="tech-tag">${tag}</span>`).join('');
+            const tagsHTML = project.tags.map(tag => `<span class="tech-tag">${esc(tag)}</span>`).join('');
             projectsHTML += `
-                <div class="spotlight-card rounded-2xl p-8" data-project-id="${project.id}">
+                <div class="spotlight-card rounded-2xl p-8" data-project-id="${esc(project.id)}">
                     <div class="project-icon">
-                        <i data-lucide="${project.icon}" class="w-8 h-8"></i>
+                        <i data-lucide="${esc(project.icon)}" class="w-8 h-8"></i>
                     </div>
                     <div>
-                        <h4 class="text-2xl font-bold text-white mb-2 project-title">${project.title}</h4>
-                        <p class="mb-4 project-desc">${project.description}</p>
+                        <h4 class="text-2xl font-bold text-white mb-2 project-title">${esc(project.title)}</h4>
+                        <p class="mb-4 project-desc">${esc(project.description)}</p>
                         <div class="flex flex-wrap gap-2 project-tags">
                             ${tagsHTML}
                         </div>
@@ -473,42 +418,35 @@ document.addEventListener('DOMContentLoaded', () => {
     lightboxCloseBtn.addEventListener('click', closeLightbox);
     
     function openProjectModal(projectId) {
-        const project = projectsData.find(p => p.id === projectId);
+        const project = projects.find(p => p.id === projectId);
         if (!project) return;
 
         modalTitle.textContent = project.title;
-        modalDesc.innerHTML = project.longDescription;
-        
-        galleryItems = [...(project.videos || []), ...(project.images || [])];
-        
-        let galleryHTML = '';
-        if (galleryItems.length > 0) {
-            galleryHTML = galleryItems.map((media, index) => {
-                const isActive = index === 0 ? 'active' : '';
-                const youtubeEmbedUrl = getYoutubeEmbedUrl(media);
+        modalDesc.innerHTML = project.long_description || '';
 
-                if (youtubeEmbedUrl) {
-                    return `<div class="video-wrapper ${isActive}"><iframe src="${youtubeEmbedUrl}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>`;
-                } else if (media.endsWith('.mp4')) {
-                    return `<video controls autoplay muted loop playsinline class="rounded-lg w-full ${isActive}"><source src="${media}" type="video/mp4"></video>`;
-                } else {
-                    return `<img src="${media}" alt="${project.title} screenshot" class="rounded-lg w-full ${isActive}">`;
-                }
-            }).join('');
-        }
+        // One HTML string per gallery slide, in the order set in the CMS.
+        galleryItems = project.media.map(media => {
+            if (media.kind === 'video') {
+                const youtubeEmbedUrl = getYoutubeEmbedUrl(media.url);
+                return youtubeEmbedUrl && `<div class="video-wrapper"><iframe src="${esc(youtubeEmbedUrl)}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>`;
+            }
+            return `<img src="${mediaUrl(media.r2_key)}" alt="${esc(media.caption || `${project.title} screenshot`)}" class="rounded-lg w-full">`;
+        }).filter(Boolean);
+
+        const galleryHTML = galleryItems.join('');
         
         galleryContentWrapper.innerHTML = galleryHTML;
         currentImageIndex = 0;
         updateGallery();
 
-        modalDetails.innerHTML = project.details.map(d => `<li class="flex justify-between border-b border-dashed border-zinc-800 py-2"><span class="font-medium text-slate-400">${d.label}</span><span class="text-white">${d.value}</span></li>`).join('');
-        modalTags.innerHTML = project.tags.map(tag => `<span class="tech-tag">${tag}</span>`).join('');
+        modalDetails.innerHTML = project.details.map(d => `<li class="flex justify-between border-b border-dashed border-zinc-800 py-2"><span class="font-medium text-slate-400">${esc(d.label)}</span><span class="text-white">${esc(d.value)}</span></li>`).join('');
+        modalTags.innerHTML = project.tags.map(tag => `<span class="tech-tag">${esc(tag)}</span>`).join('');
         
         if (project.links && project.links.length > 0) {
             modalLinksContainer.style.display = 'block';
             modalLinks.innerHTML = project.links.map(link => `
-                <a href="${link.url}" target="_blank" rel="noopener noreferrer" class="flex items-center gap-2 text-slate-300 hover:text-accent transition-colors group">
-                    <span class="group-hover:underline">${link.label}</span>
+                <a href="${esc(link.url)}" target="_blank" rel="noopener noreferrer" class="flex items-center gap-2 text-slate-300 hover:text-accent transition-colors group">
+                    <span class="group-hover:underline">${esc(link.label)}</span>
                     <i data-lucide="arrow-up-right" class="w-4 h-4 transition-transform group-hover:-translate-y-px group-hover:translate-x-px"></i>
                 </a>
             `).join('');
@@ -611,20 +549,25 @@ document.addEventListener('DOMContentLoaded', () => {
          slideIntervalId = setInterval(nextSlide, slideInterval);
     }
 
-    gsap.utils.toArray('.reveal-text').forEach(elem => {
-        gsap.from(elem, {
-            scrollTrigger: {
-                trigger: elem,
-                start: 'top 85%',
-                end: 'bottom 20%',
-                toggleActions: 'play none none reverse'
-            },
-            opacity: 0,
-            y: 40,
-            duration: 1,
-            ease: 'power1.out'
+    // Runs once the CMS content is on the page, so the rendered timeline entries are included
+    // and the scroll triggers above are measured against the final page height.
+    function setupRevealText() {
+        gsap.utils.toArray('.reveal-text').forEach(elem => {
+            gsap.from(elem, {
+                scrollTrigger: {
+                    trigger: elem,
+                    start: 'top 85%',
+                    end: 'bottom 20%',
+                    toggleActions: 'play none none reverse'
+                },
+                opacity: 0,
+                y: 40,
+                duration: 1,
+                ease: 'power1.out'
+            });
         });
-    });
+        ScrollTrigger.refresh();
+    }
 
     const sections = document.querySelectorAll('section[id]');
     const colors = {
@@ -648,4 +591,6 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
     });
+
+    loadContent();
 });

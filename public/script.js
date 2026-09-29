@@ -3,6 +3,7 @@ const projectsPerPage = 4;
 // Filled from /api/content (managed in the CMS at /admin).
 let projects = [];
 let regularProjects = [];
+let gridTriggers = [];
 let experience = [];
 let education = [];
 
@@ -20,6 +21,54 @@ function esc(value) {
 
 function mediaUrl(r2Key) {
     return `/api/media/${r2Key.split('/').map(encodeURIComponent).join('/')}`;
+}
+
+// The 11-character video id from the usual YouTube URL shapes, or ''.
+function youtubeId(url) {
+    const m = (url || '').trim().match(
+        /(?:youtube\.com\/(?:watch\?(?:.*&)?v=|embed\/|shorts\/|live\/|v\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/
+    );
+    return m ? m[1] : '';
+}
+
+// Lucide drops icons now and then; an unknown name falls back to a neutral icon instead of an empty space.
+function iconName(name) {
+    const clean = (name || '').trim();
+    const key = clean.split('-').map(p => p.charAt(0).toUpperCase() + p.slice(1)).join('');
+    return clean && window.lucide && lucide.icons[key] ? clean : 'box';
+}
+
+// A project's card cover is its first gallery item; reordering the gallery in the CMS changes it.
+function projectCover(project) {
+    const first = project.media[0];
+    if (!first) return null;
+    if (first.kind === 'upload') return { src: mediaUrl(first.r2_key), video: false };
+    const id = youtubeId(first.url);
+    return id ? { src: `https://img.youtube.com/vi/${id}/hqdefault.jpg`, video: true } : null;
+}
+
+function coverHTML(project, extraClass = '') {
+    const cover = projectCover(project);
+    const inner = cover
+        ? `<img src="${esc(cover.src)}" alt="" loading="lazy" decoding="async">` +
+          (cover.video ? '<span class="cover-badge"><i data-lucide="play" class="w-3.5 h-3.5"></i> Video</span>' : '')
+        : `<div class="project-cover-placeholder"><i data-lucide="${iconName(project.icon)}" class="w-14 h-14"></i></div>`;
+    const style = cover ? ` style="--cover: url('${esc(cover.src)}')"` : '';
+    return `<div class="project-cover ${extraClass}"${style}>${inner}</div>`;
+}
+
+// Near-square covers are usually logos, which a 16:9 crop cuts apart. Those are shown
+// whole over a blurred copy of themselves instead.
+function fitCovers(container) {
+    container.querySelectorAll('.project-cover img').forEach(img => {
+        const check = () => {
+            if (img.naturalWidth && img.naturalWidth / img.naturalHeight < 1.3) {
+                img.parentElement.classList.add('is-logo');
+            }
+        };
+        if (img.complete) check();
+        else img.addEventListener('load', check, { once: true });
+    });
 }
 
 // --- RESUME GENERATOR LOGIC ---
@@ -120,18 +169,7 @@ function generateResume() {
 }
 
 function getYoutubeEmbedUrl(url) {
-    let videoId;
-    try {
-        const urlObj = new URL(url);
-        if (urlObj.hostname === "www.youtube.com" || urlObj.hostname === "youtube.com") {
-            videoId = urlObj.searchParams.get("v");
-        } else if (urlObj.hostname === "youtu.be") {
-            videoId = urlObj.pathname.slice(1);
-        }
-    } catch (e) {
-        return null;
-    }
-
+    const videoId = youtubeId(url);
     if (videoId) {
         return `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&loop=1&playlist=${videoId}&enablejsapi=1`;
     }
@@ -201,19 +239,24 @@ document.addEventListener('DOMContentLoaded', () => {
         const tagsHTML = project.tags.map(tag => `<span class="tech-tag">${esc(tag)}</span>`).join('');
 
         container.innerHTML = `
-            <div class="spotlight-card rounded-2xl p-8 col-span-1 md:col-span-2" data-project-id="${esc(project.id)}">
-                <div class="project-icon">
-                    <i data-lucide="${esc(project.icon)}" class="w-8 h-8"></i>
-                </div>
-                <div>
-                    <h4 class="text-3xl font-bold text-white mb-2 project-title">${esc(project.title)}</h4>
-                    <p class="mb-4 max-w-xl project-desc">${esc(project.description)}</p>
+            <div class="spotlight-card featured-card rounded-2xl md:grid md:grid-cols-5" data-project-id="${esc(project.id)}">
+                ${coverHTML(project, 'md:col-span-3')}
+                <div class="relative p-8 md:col-span-2 flex flex-col justify-center">
+                    <div class="project-icon">
+                        <i data-lucide="${iconName(project.icon)}" class="w-8 h-8"></i>
+                    </div>
+                    <span class="text-xs font-bold uppercase tracking-widest text-accent mb-3">Featured</span>
+                    <h4 class="text-3xl font-bold text-white mb-3 pr-10 project-title">${esc(project.title)}</h4>
+                    <p class="mb-5 project-desc">${esc(project.description)}</p>
                     <div class="flex flex-wrap gap-2 project-tags">
                         ${tagsHTML}
                     </div>
                 </div>
             </div>
         `;
+        lucide.createIcons();
+        fitCovers(container);
+        animateCards(container.querySelectorAll('.spotlight-card'));
     }
 
     function renderPaginatedProjects() {
@@ -228,12 +271,13 @@ document.addEventListener('DOMContentLoaded', () => {
         paginatedItems.forEach(project => {
             const tagsHTML = project.tags.map(tag => `<span class="tech-tag">${esc(tag)}</span>`).join('');
             projectsHTML += `
-                <div class="spotlight-card rounded-2xl p-8" data-project-id="${esc(project.id)}">
-                    <div class="project-icon">
-                        <i data-lucide="${esc(project.icon)}" class="w-8 h-8"></i>
-                    </div>
-                    <div>
-                        <h4 class="text-2xl font-bold text-white mb-2 project-title">${esc(project.title)}</h4>
+                <div class="spotlight-card rounded-2xl flex flex-col" data-project-id="${esc(project.id)}">
+                    ${coverHTML(project)}
+                    <div class="relative p-8 flex-1">
+                        <div class="project-icon">
+                            <i data-lucide="${iconName(project.icon)}" class="w-8 h-8"></i>
+                        </div>
+                        <h4 class="text-2xl font-bold text-white mb-2 pr-10 project-title">${esc(project.title)}</h4>
                         <p class="mb-4 project-desc">${esc(project.description)}</p>
                         <div class="flex flex-wrap gap-2 project-tags">
                             ${tagsHTML}
@@ -243,9 +287,13 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
         });
         grid.innerHTML = projectsHTML;
-        
+
         setupPaginationControls();
-        initializeDynamicFeatures();
+        lucide.createIcons();
+        fitCovers(grid);
+        // The previous page's cards are gone; drop their scroll triggers before adding new ones.
+        gridTriggers.forEach(t => t.kill());
+        gridTriggers = animateCards(grid.querySelectorAll('.spotlight-card'));
     }
 
     function setupPaginationControls() {
@@ -304,30 +352,25 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('next-page').disabled = currentPage === pageCount;
     }
     
-    function initializeDynamicFeatures() {
-        lucide.createIcons();
-
-        document.querySelectorAll('.spotlight-card').forEach(card => {
-            card.addEventListener('mousemove', e => {
-                const rect = card.getBoundingClientRect();
-                const x = e.clientX - rect.left;
-                const y = e.clientY - rect.top;
-                card.style.setProperty('--x', `${x}px`);
-                card.style.setProperty('--y', `${y}px`);
-            });
-        });
-
-        gsap.utils.toArray('.spotlight-card').forEach(card => {
-            const cardTl = gsap.timeline({
-                scrollTrigger: {
-                    trigger: card,
-                    start: 'top 85%',
-                    toggleActions: 'play none none reverse'
-                }
-            });
-            cardTl.from(card, { opacity: 0, y: 30, duration: 0.6, ease: 'power3.out' });
-        });
+    // Fade-in on scroll for freshly rendered cards. Returns their ScrollTriggers.
+    function animateCards(cards) {
+        return [...cards].map(card => gsap.timeline({
+            scrollTrigger: {
+                trigger: card,
+                start: 'top 85%',
+                toggleActions: 'play none none reverse'
+            }
+        }).from(card, { opacity: 0, y: 30, duration: 0.6, ease: 'power3.out' }).scrollTrigger);
     }
+
+    // Spotlight glow follows the cursor. One delegated listener, so re-rendering cards adds nothing.
+    document.querySelector('main').addEventListener('mousemove', e => {
+        const card = e.target.closest('.spotlight-card');
+        if (!card) return;
+        const rect = card.getBoundingClientRect();
+        card.style.setProperty('--x', `${e.clientX - rect.left}px`);
+        card.style.setProperty('--y', `${e.clientY - rect.top}px`);
+    });
 
     // --- Project Modal Logic ---
     const modalOverlay = document.getElementById('project-modal-overlay');

@@ -1,6 +1,6 @@
 import { json, invalidateContent } from "../../_utils.js";
 
-// DELETE /api/admin/projects/:id - remove a project, its media rows and its uploaded images.
+// DELETE /api/admin/projects/:id - remove a project, its media rows, tag links and uploaded images.
 export async function onRequestDelete(context) {
     const { request, env, params } = context;
 
@@ -12,6 +12,7 @@ export async function onRequestDelete(context) {
 
         await env.DB.batch([
             env.DB.prepare("DELETE FROM project_media WHERE project_id = ?").bind(id),
+            env.DB.prepare("DELETE FROM project_categories WHERE project_id = ?").bind(id),
             env.DB.prepare("DELETE FROM projects WHERE id = ?").bind(id)
         ]);
         await invalidateContent(env);

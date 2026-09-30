@@ -6,8 +6,8 @@ import { json, uuid, text, jsonList, invalidateContent } from "../_utils.js";
 //   PUT    /api/admin/projects        update (body carries the id)
 //   DELETE /api/admin/projects/:id    projects/[id].js
 //
-// Body: { id?, title, description, long_description, icon, role, client, year, duration, team,
-//         tags[], details[{label,value}],
+// Body: { id?, slug?, title, description, long_description, icon, role, client, year, duration, team,
+//         tags[] (technologies), categories[] (filter tag ids), details[{label,value}],
 //         links[{label,url}], is_featured, status, media[{kind:'upload',r2_key,caption} |
 //         {kind:'video',url,caption}] }
 
@@ -21,6 +21,13 @@ export async function onRequestPut(context) {
 
 const isHttpUrl = v => /^https?:\/\/\S+$/i.test(v || "");
 
+// URL name for /projects/<slug>: lowercase ASCII words joined by dashes.
+// Accented letters lose the accent first (ž -> z, ā -> a).
+const slugify = v => String(v || "")
+    .normalize("NFKD").replace(/[̀-ͯ]/g, "")
+    .toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")
+    .slice(0, 80).replace(/-+$/, "");
+
 async function handleSave(context, method) {
     const { request, env } = context;
 
@@ -33,6 +40,11 @@ async function handleSave(context, method) {
         const description = text(data.description);
         if (!title) return json({ error: "A title is required." }, 400);
         if (!description) return json({ error: "A short description is required." }, 400);
+
+        const slug = slugify(data.slug) || slugify(title);
+        if (!slug) return json({ error: "The URL name needs at least one letter or digit." }, 400);
+        const clash = await env.DB.prepare("SELECT title FROM projects WHERE slug = ? AND id <> ?").bind(slug, id).first();
+        if (clash) return json({ error: `The URL name "${slug}" is already used by "${clash.title}".` }, 409);
 
         const tags = jsonList(data.tags, t => text(t));
         const details = jsonList(data.details, d => {
@@ -68,7 +80,7 @@ async function handleSave(context, method) {
         const fields = [
             title, description, data.long_description || null, text(data.icon),
             tags, details, links, isFeatured, status,
-            text(data.role), text(data.client), text(data.year), text(data.duration), text(data.team)
+            text(data.role), text(data.client), text(data.year), text(data.duration), text(data.team), slug
         ];
         const statements = [];
         // Only one project can be featured: taking the flag clears it everywhere else.
@@ -78,18 +90,27 @@ async function handleSave(context, method) {
         if (isPost) {
             statements.push(env.DB.prepare(`
                 INSERT INTO projects (title, description, long_description, icon, tags, details, links,
-                                      is_featured, status, role, client, year, duration, team, id, position)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, (SELECT COALESCE(MAX(position), -1) + 1 FROM projects))
+                                      is_featured, status, role, client, year, duration, team, slug, id, position)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, (SELECT COALESCE(MAX(position), -1) + 1 FROM projects))
             `).bind(...fields, id));
         } else {
             statements.push(env.DB.prepare(`
                 UPDATE projects SET title = ?, description = ?, long_description = ?, icon = ?,
                        tags = ?, details = ?, links = ?, is_featured = ?, status = ?,
-                       role = ?, client = ?, year = ?, duration = ?, team = ?,
+                       role = ?, client = ?, year = ?, duration = ?, team = ?, slug = ?,
                        updated_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now')
                 WHERE id = ?
             `).bind(...fields, id));
             statements.push(env.DB.prepare("DELETE FROM project_media WHERE project_id = ?").bind(id));
+            statements.push(env.DB.prepare("DELETE FROM project_categories WHERE project_id = ?").bind(id));
+        }
+        // Filter tags: only ids that exist are linked (unknown ones are dropped).
+        const categoryIds = [...new Set((Array.isArray(data.categories) ? data.categories : []).filter(c => typeof c === "string"))];
+        for (const categoryId of categoryIds) {
+            statements.push(env.DB.prepare(`
+                INSERT OR IGNORE INTO project_categories (project_id, category_id)
+                SELECT ?, id FROM categories WHERE id = ?
+            `).bind(id, categoryId));
         }
         rows.forEach((r, i) => {
             statements.push(env.DB.prepare(`
@@ -110,7 +131,7 @@ async function handleSave(context, method) {
             try { await env.MEDIA.delete(dropped); } catch (e) { /* orphaned file, harmless */ }
         }
 
-        return json({ success: true, id });
+        return json({ success: true, id, slug });
     } catch (err) {
         return json({ error: err.message }, 500);
     }

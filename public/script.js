@@ -6,6 +6,9 @@ let regularProjects = [];
 let gridTriggers = [];
 let experience = [];
 let education = [];
+// Filter tags from the CMS ([{ id, name }] in button order) and the one selected (null = all).
+let categories = [];
+let activeCategory = null;
 
 const email = "lauristaube@gmail.com";
 const number = "(+371) 2 867 44 29";
@@ -204,7 +207,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const response = await fetch('/api/content');
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
-            ({ projects, experience, education } = await response.json());
+            ({ projects, experience, education, categories } = await response.json());
         } catch (err) {
             console.error('Could not load content', err);
             document.getElementById('projects-grid').innerHTML =
@@ -214,17 +217,74 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const featuredProject = projects.find(p => p.is_featured);
-        regularProjects = projects.filter(p => !p.is_featured);
-
         if(featuredProject) {
             renderFeaturedProject(featuredProject);
         }
 
-        renderPaginatedProjects();
+        activeCategory = categoryFromUrl();
+        renderFilters();
+        applyFilter();
         renderTimeline('experience-list', experience);
         renderTimeline('education-list', education);
         setupRevealText();
+        openProjectFromUrl();
     }
+
+    // --- Project filters ---
+    // One button per tag that at least one published project uses, plus "All". The choice
+    // is kept in the address (?tag=vr) so a filtered view can be linked to.
+    const tagParam = category => category.name.toLowerCase().trim().replace(/\s+/g, '-');
+
+    function categoryFromUrl() {
+        const wanted = new URLSearchParams(window.location.search).get('tag');
+        const match = wanted && categories.find(c => tagParam(c) === wanted.toLowerCase());
+        return match ? match.id : null;
+    }
+
+    function renderFilters() {
+        const container = document.getElementById('project-filters');
+        const counts = {};
+        projects.forEach(p => p.categories.forEach(id => { counts[id] = (counts[id] || 0) + 1; }));
+        const used = categories.filter(c => counts[c.id]);
+        if (!used.length) {
+            container.innerHTML = '';
+            return;
+        }
+        const button = (id, label, count) => `
+            <button class="filter-btn ${activeCategory === id ? 'active' : ''}" data-category="${esc(id || '')}"
+                aria-pressed="${activeCategory === id}">
+                ${esc(label)} <span class="filter-count">${count}</span>
+            </button>`;
+        container.innerHTML = button(null, 'All', projects.length) +
+            used.map(c => button(c.id, c.name, counts[c.id])).join('');
+    }
+
+    // All: the featured card on top and the rest in the grid. A tag: every matching
+    // project in the grid, the featured one included.
+    function applyFilter() {
+        const featuredContainer = document.getElementById('featured-project-container');
+        if (activeCategory) {
+            regularProjects = projects.filter(p => p.categories.includes(activeCategory));
+            featuredContainer.style.display = 'none';
+        } else {
+            regularProjects = projects.filter(p => !p.is_featured);
+            featuredContainer.style.display = '';
+        }
+        currentPage = 1;
+        renderPaginatedProjects();
+        ScrollTrigger.refresh();
+    }
+
+    document.getElementById('project-filters').addEventListener('click', e => {
+        const btn = e.target.closest('.filter-btn');
+        if (!btn) return;
+        activeCategory = btn.dataset.category || null;
+        const category = categories.find(c => c.id === activeCategory);
+        const url = category ? `/?tag=${encodeURIComponent(tagParam(category))}#projects` : '/#projects';
+        history.replaceState(history.state, '', url);
+        renderFilters();
+        applyFilter();
+    });
 
     function renderTimeline(containerId, entries) {
         const container = document.getElementById(containerId);
@@ -442,7 +502,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!lightboxOverlay.classList.contains('hidden')) {
                 closeLightbox();
             } else {
-                closeProjectModal();
+                requestCloseProject();
             }
         }
     }
@@ -524,18 +584,77 @@ document.addEventListener('DOMContentLoaded', () => {
         window.removeEventListener('keydown', handleEscKey);
     }
     
+    // --- Project URLs ---
+    // Each project has its own address, /projects/<slug>. Opening a project pushes it
+    // onto the history, Back closes it, and arriving on it opens that project. The
+    // server has already put the project's title, text and preview tags into the
+    // page (functions/projects/[slug].js); this keeps the browser side in step.
+    const HOME_TITLE = 'Lauris Taube - Game Developer & 3D Artist'; // same as <title> in index.html
+    const projectSlug = project => project.slug || project.id;
+    const slugFromPath = () => {
+        // window.location: this module has its own `location` constant (the resume's address).
+        const m = window.location.pathname.match(/^\/projects\/([^/]+)\/?$/);
+        return m ? decodeURIComponent(m[1]) : null;
+    };
+
+    function showProject(project, pushHistory) {
+        openProjectModal(project.id);
+        document.title = `${project.title} · Lauris Taube`;
+        if (pushHistory) {
+            history.pushState({ project: project.id, pushed: true }, '', `/projects/${encodeURIComponent(projectSlug(project))}`);
+        }
+    }
+
+    function hideProject() {
+        closeProjectModal();
+        document.title = HOME_TITLE;
+    }
+
+    // Close button, backdrop click and Escape.
+    function requestCloseProject() {
+        if (history.state && history.state.pushed) {
+            history.back(); // the popstate handler closes the pop-up
+        } else {
+            // Arrived straight on a project address: become the homepage in place, at the projects.
+            hideProject();
+            history.replaceState(null, '', '/');
+            document.getElementById('projects').scrollIntoView();
+        }
+    }
+
+    // Called once the content has loaded.
+    function openProjectFromUrl() {
+        const slug = slugFromPath();
+        if (!slug) return;
+        const project = projects.find(p => projectSlug(p) === slug);
+        if (project) {
+            showProject(project, false);
+            history.replaceState({ project: project.id }, '', window.location.pathname);
+        } else {
+            hideProject();
+            history.replaceState(null, '', '/');
+        }
+    }
+
+    window.addEventListener('popstate', () => {
+        const slug = slugFromPath();
+        const project = slug && projects.find(p => projectSlug(p) === slug);
+        if (project) showProject(project, false);
+        else hideProject();
+    });
+
     document.querySelector('main').addEventListener('click', (e) => {
-         const card = e.target.closest('.spotlight-card');
+        const card = e.target.closest('.spotlight-card');
         if (card) {
-            const projectId = card.dataset.projectId;
-            openProjectModal(projectId);
+            const project = projects.find(p => p.id === card.dataset.projectId);
+            if (project) showProject(project, true);
         }
     });
 
-    modalCloseBtn.addEventListener('click', closeProjectModal);
+    modalCloseBtn.addEventListener('click', requestCloseProject);
     modalOverlay.addEventListener('click', (e) => {
         if (e.target === modalOverlay) {
-            closeProjectModal();
+            requestCloseProject();
         }
     });
 

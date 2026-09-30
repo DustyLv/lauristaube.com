@@ -351,6 +351,33 @@ body.modal-open {
     background: #c22a4d;
 }
 
+/* Project filter buttons (tags from the CMS) */
+.filter-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.4rem 0.9rem;
+    border-radius: 9999px;
+    border: 1px solid var(--border);
+    background-color: #111;
+    color: var(--secondary-text);
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+.filter-btn:hover {
+    color: var(--primary-text);
+    border-color: rgba(255, 255, 255, 0.25);
+}
+.filter-btn.active {
+    background-color: var(--accent);
+    border-color: var(--accent);
+    color: white;
+}
+.filter-count {
+    font-size: 0.75rem;
+    opacity: 0.6;
+}
 /* Pagination Styles */
 .pagination-btn {
     background-color: #1a1a1a;

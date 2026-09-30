@@ -138,7 +138,7 @@ const clone = v => JSON.parse(JSON.stringify(v));
 
 const EMPTY_PROJECT = {
     id: null, title: '', description: '', long_description: '', icon: '',
-    role: '', client: '', year: '', duration: '', team: '',
+    slug: '', role: '', client: '', year: '', duration: '', team: '', categories: [],
     tags: [], details: [], links: [], is_featured: false, status: 'draft', media: []
 };
 const EMPTY_TIMELINE = {
@@ -166,6 +166,9 @@ document.addEventListener('alpine:init', () => {
         projects: [],
         experience: [],
         education: [],
+        // Filter tags ("Tags" tab): [{ id, name }] in filter-bar order.
+        categories: [],
+        newCategory: '',
 
         activeRecord: {},
         // JSON snapshot of activeRecord when the editor opened, for dirty-checking.
@@ -276,10 +279,11 @@ document.addEventListener('alpine:init', () => {
             this.projects = data.projects;
             this.experience = data.experience;
             this.education = data.education;
+            this.categories = data.categories;
         },
 
         listFor(tab) {
-            return tab === 'projects' ? this.projects : this[tab];
+            return this[tab];
         },
 
         // ---- Unsaved-changes guard ----
@@ -374,6 +378,8 @@ document.addEventListener('alpine:init', () => {
             try {
                 const result = await this.api(r.id ? 'PUT' : 'POST', url, r);
                 r.id = result.id;
+                // The server makes the URL name from the title when none was given.
+                if (result.slug) r.slug = result.slug;
                 this.pristine = JSON.stringify(r);
                 this.flash('Saved');
                 await this.loadContent();
@@ -424,7 +430,7 @@ document.addEventListener('alpine:init', () => {
             [list[index], list[to]] = [list[to], list[index]];
             try {
                 await this.api('PUT', '/api/admin/order', {
-                    type: tab === 'projects' ? 'projects' : 'timeline',
+                    type: tab === 'projects' || tab === 'categories' ? tab : 'timeline',
                     ids: list.map(item => item.id)
                 });
             } catch (err) {
@@ -495,6 +501,77 @@ document.addEventListener('alpine:init', () => {
             const outline = ['The challenge', 'What I did', 'The result']
                 .map(h => `<h3>${h}</h3><p><br></p>`).join('');
             this.activeRecord.long_description = (this.activeRecord.long_description || '') + outline;
+        },
+
+        // ---- Filter tags ----
+        categoryName(id) {
+            const c = this.categories.find(c => c.id === id);
+            return c ? c.name : '';
+        },
+
+        projectsWithCategory(id) {
+            return this.projects.filter(p => p.categories.includes(id)).length;
+        },
+
+        toggleCategory(id) {
+            const list = this.activeRecord.categories;
+            const i = list.indexOf(id);
+            if (i === -1) list.push(id);
+            else list.splice(i, 1);
+        },
+
+        async addCategory() {
+            const name = this.newCategory.trim();
+            if (!name) return;
+            try {
+                await this.api('POST', '/api/admin/categories', { name });
+                this.newCategory = '';
+                await this.loadContent();
+                this.refreshIcons();
+            } catch (err) {
+                this.flash(err.message, 'error');
+            }
+        },
+
+        async renameCategory(category, name) {
+            name = name.trim();
+            if (!name || name === category.name) return;
+            try {
+                await this.api('PUT', '/api/admin/categories', { id: category.id, name });
+                category.name = name;
+                this.flash('Tag renamed');
+            } catch (err) {
+                this.flash(err.message, 'error');
+                await this.loadContent();
+            }
+        },
+
+        confirmDeleteCategory(category) {
+            const used = this.projectsWithCategory(category.id);
+            this.modal = {
+                open: true,
+                title: `Delete the "${category.name}" tag?`,
+                body: used ? `It is removed from the ${used} project${used === 1 ? '' : 's'} that use${used === 1 ? 's' : ''} it.` : 'No projects use it.',
+                actions: [
+                    {
+                        text: 'Delete', class: 'bg-red-600 text-white hover:bg-red-700',
+                        fn: async () => {
+                            this.modal.open = false;
+                            try {
+                                await this.api('DELETE', '/api/admin/categories/' + encodeURIComponent(category.id));
+                                await this.loadContent();
+                                this.flash('Tag deleted');
+                            } catch (err) {
+                                this.flash(err.message, 'error');
+                            }
+                        }
+                    },
+                    {
+                        text: 'Cancel', class: 'bg-zinc-100 text-zinc-700 hover:bg-zinc-200',
+                        fn: () => { this.modal.open = false; }
+                    }
+                ]
+            };
         },
 
         // ---- Timeline editor helpers ----

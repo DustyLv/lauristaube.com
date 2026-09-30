@@ -24,7 +24,14 @@ npx wrangler d1 migrations apply portfolio-db --remote
 npx wrangler d1 execute portfolio-db --local --persist-to=.wrangler/state --command "SELECT id, title FROM projects"
 ```
 
-`scripts/migrate-content.mjs --local|--remote` is the one-time import of the old hardcoded content (`projectdata.js`, `images/`). It replaces all projects and timeline rows, refuses `--remote` when projects already exist (unless `--force`), and `--skip-images` skips the slow R2 uploads. `projectdata.js` and the root `images/` folder only exist for this script; they are not served.
+Content lives only in production D1/R2 (the original hardcoded `projectdata.js` + `images/` were imported once and removed; see git history). To get production content into a fresh local state:
+
+```bash
+npx wrangler d1 export portfolio-db --remote --output=backup-remote.sql   # backup*.sql is gitignored
+npx wrangler d1 execute portfolio-db --local --persist-to=.wrangler/state --file=backup-remote.sql
+```
+
+Local R2 starts empty, so card covers 404 locally until images are uploaded through the local CMS (or copied with `wrangler r2 object put ... --local`).
 
 `--persist-to=.wrangler/state` must be the same on every local command, or wrangler reads a different local state.
 

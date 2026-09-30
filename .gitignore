@@ -3,6 +3,5 @@ node_modules/
 .dev.vars
 *.log
 .DS_Store
-# D1 exports contain the access_keys rows
+# D1 exports (copies of production data)
 backup*.sql
-scripts/seed.sql

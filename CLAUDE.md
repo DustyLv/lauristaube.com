@@ -37,7 +37,7 @@ Local R2 starts empty, so card covers 404 locally until images are uploaded thro
 
 ## Architecture
 
-**Data (D1 `portfolio-db`, `migrations/0001_init.sql`):** `projects` (tags/details/links are JSON text columns; `is_featured` has a unique partial index so only one is featured; `status` draft/published; `position` = display order), `project_media` (gallery rows: `upload` = R2 key, `video` = YouTube URL), `timeline` (experience + education, `section` column, `resume_bullets` JSON). The `access_keys` table from 0001 was dropped in 0002 when sign-in moved to Cloudflare Access.
+**Data (D1 `portfolio-db`, `migrations/0001_init.sql`):** `projects` (optional case-study facts `role`/`client`/`year`/`duration`/`team` from 0003 are plain text columns shown before the free-form `details` in the pop-up, with year+client on the card and role+year in the resume; tags/details/links are JSON text columns; `is_featured` has a unique partial index so only one is featured; `status` draft/published; `position` = display order), `project_media` (gallery rows: `upload` = R2 key, `video` = YouTube URL), `timeline` (experience + education, `section` column, `resume_bullets` JSON). The `access_keys` table from 0001 was dropped in 0002 when sign-in moved to Cloudflare Access.
 
 **API (`functions/api/`, file-based routing):**
 - `GET /api/content`: `{ projects, experience, education }`, published only, cached in KV under `content`. `GET /api/admin/content` is the same with drafts, uncached, plus `user` (the Access email); the CMS uses that. Both build it with `_content.js`.

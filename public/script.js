@@ -57,6 +57,12 @@ function coverHTML(project, extraClass = '') {
     return `<div class="project-cover ${extraClass}"${style}>${inner}</div>`;
 }
 
+// "2023 · Žanis Lipke Memorial" above a card title, from the optional case-study facts.
+function cardMeta(project) {
+    const parts = [project.year, project.client].filter(Boolean);
+    return parts.length ? `<p class="project-meta">${parts.map(esc).join(' · ')}</p>` : '';
+}
+
 // Near-square covers are usually logos, which a 16:9 crop cuts apart. Those are shown
 // whole over a blurred copy of themselves instead.
 function fitCovers(container) {
@@ -109,7 +115,8 @@ function resumeTemplate(t) {
     // --- PROJECTS ---
     const projectsHTML = projects.filter(p => !p.is_featured).map(p => `
         <div class="mb-4 break-inside-avoid">
-            <h3 class="text-lg font-bold ${t.heading}">${esc(p.title)}</h3>
+            <h3 class="text-lg font-bold ${t.heading}">${esc(p.title)}${[p.role, p.year].some(Boolean)
+                ? `<span class="text-sm font-normal ${t.muted}"> · ${[p.role, p.year].filter(Boolean).map(esc).join(', ')}</span>` : ''}</h3>
             <p class="text-sm ${t.muted} italic mb-1">${p.tags.map(esc).join(' · ')}</p>
             <p class="${t.body} text-sm">${esc(p.description)}</p>
         </div>
@@ -246,6 +253,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <i data-lucide="${iconName(project.icon)}" class="w-8 h-8"></i>
                     </div>
                     <span class="text-xs font-bold uppercase tracking-widest text-accent mb-3">Featured</span>
+                    ${cardMeta(project)}
                     <h4 class="text-3xl font-bold text-white mb-3 pr-10 project-title">${esc(project.title)}</h4>
                     <p class="mb-5 project-desc">${esc(project.description)}</p>
                     <div class="flex flex-wrap gap-2 project-tags">
@@ -277,6 +285,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <div class="project-icon">
                             <i data-lucide="${iconName(project.icon)}" class="w-8 h-8"></i>
                         </div>
+                        ${cardMeta(project)}
                         <h4 class="text-2xl font-bold text-white mb-2 pr-10 project-title">${esc(project.title)}</h4>
                         <p class="mb-4 project-desc">${esc(project.description)}</p>
                         <div class="flex flex-wrap gap-2 project-tags">
@@ -482,7 +491,11 @@ document.addEventListener('DOMContentLoaded', () => {
         currentImageIndex = 0;
         updateGallery();
 
-        modalDetails.innerHTML = project.details.map(d => `<li class="flex justify-between border-b border-dashed border-zinc-800 py-2"><span class="font-medium text-slate-400">${esc(d.label)}</span><span class="text-white">${esc(d.value)}</span></li>`).join('');
+        // The optional case-study facts come first, then the free-form label/value details.
+        const facts = [['Role', project.role], ['Client', project.client], ['Year', project.year],
+                       ['Duration', project.duration], ['Team', project.team]]
+            .filter(([, value]) => value).map(([label, value]) => ({ label, value }));
+        modalDetails.innerHTML = [...facts, ...project.details].map(d => `<li class="flex justify-between border-b border-dashed border-zinc-800 py-2"><span class="font-medium text-slate-400">${esc(d.label)}</span><span class="text-white">${esc(d.value)}</span></li>`).join('');
         modalTags.innerHTML = project.tags.map(tag => `<span class="tech-tag">${esc(tag)}</span>`).join('');
         
         if (project.links && project.links.length > 0) {

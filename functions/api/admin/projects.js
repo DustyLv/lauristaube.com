@@ -6,7 +6,8 @@ import { json, uuid, text, jsonList, invalidateContent } from "../_utils.js";
 //   PUT    /api/admin/projects        update (body carries the id)
 //   DELETE /api/admin/projects/:id    projects/[id].js
 //
-// Body: { id?, title, description, long_description, icon, tags[], details[{label,value}],
+// Body: { id?, title, description, long_description, icon, role, client, year, duration, team,
+//         tags[], details[{label,value}],
 //         links[{label,url}], is_featured, status, media[{kind:'upload',r2_key,caption} |
 //         {kind:'video',url,caption}] }
 
@@ -66,7 +67,8 @@ async function handleSave(context, method) {
 
         const fields = [
             title, description, data.long_description || null, text(data.icon),
-            tags, details, links, isFeatured, status
+            tags, details, links, isFeatured, status,
+            text(data.role), text(data.client), text(data.year), text(data.duration), text(data.team)
         ];
         const statements = [];
         // Only one project can be featured: taking the flag clears it everywhere else.
@@ -76,13 +78,14 @@ async function handleSave(context, method) {
         if (isPost) {
             statements.push(env.DB.prepare(`
                 INSERT INTO projects (title, description, long_description, icon, tags, details, links,
-                                      is_featured, status, id, position)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, (SELECT COALESCE(MAX(position), -1) + 1 FROM projects))
+                                      is_featured, status, role, client, year, duration, team, id, position)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, (SELECT COALESCE(MAX(position), -1) + 1 FROM projects))
             `).bind(...fields, id));
         } else {
             statements.push(env.DB.prepare(`
                 UPDATE projects SET title = ?, description = ?, long_description = ?, icon = ?,
                        tags = ?, details = ?, links = ?, is_featured = ?, status = ?,
+                       role = ?, client = ?, year = ?, duration = ?, team = ?,
                        updated_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now')
                 WHERE id = ?
             `).bind(...fields, id));

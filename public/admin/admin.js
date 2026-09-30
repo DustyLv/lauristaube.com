@@ -93,9 +93,11 @@ function rtMount(el, setter, placeholder) {
         theme: 'snow',
         placeholder: placeholder || '',
         // Allowlist; anything else is stripped, on paste too.
-        formats: ['bold', 'italic', 'underline', 'list', 'link'],
+        formats: ['header', 'bold', 'italic', 'underline', 'list', 'link'],
         modules: {
             toolbar: [
+                // One heading level: section titles inside a project write-up.
+                [{ header: 3 }],
                 ['bold', 'italic', 'underline'],
                 [{ list: 'ordered' }, { list: 'bullet' }],
                 ['link'],
@@ -136,6 +138,7 @@ const clone = v => JSON.parse(JSON.stringify(v));
 
 const EMPTY_PROJECT = {
     id: null, title: '', description: '', long_description: '', icon: '',
+    role: '', client: '', year: '', duration: '', team: '',
     tags: [], details: [], links: [], is_featured: false, status: 'draft', media: []
 };
 const EMPTY_TIMELINE = {
@@ -485,6 +488,13 @@ document.addEventListener('alpine:init', () => {
                     this.uploading--;
                 }
             }
+        },
+
+        // Adds section headings for a case-study write-up; existing text stays above them as the intro.
+        addCaseStudyOutline() {
+            const outline = ['The challenge', 'What I did', 'The result']
+                .map(h => `<h3>${h}</h3><p><br></p>`).join('');
+            this.activeRecord.long_description = (this.activeRecord.long_description || '') + outline;
         },
 
         // ---- Timeline editor helpers ----

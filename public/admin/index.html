@@ -207,8 +207,12 @@
                                     <p class="mt-1 text-xs text-zinc-500">Shown on the project card and in the resume.</p>
                                 </div>
                                 <div>
-                                    <label class="label">About the project</label>
+                                    <label class="label flex items-center justify-between">About the project
+                                        <button type="button" class="font-normal normal-case text-accent hover:underline"
+                                            @click="addCaseStudyOutline()">+ Add case-study outline</button></label>
                                     <div x-richtext="activeRecord.long_description" data-rt-placeholder="Shown in the project pop-up…"></div>
+                                    <p class="mt-1 text-xs text-zinc-500">Tip: a short intro, then "The challenge", "What I did" and
+                                        "The result" (use the H3 button for headings).</p>
                                 </div>
                             </div>
 
@@ -260,6 +264,18 @@
                         </div>
 
                         <div class="space-y-4">
+                            <div class="card space-y-3">
+                                <label class="label">Project facts</label>
+                                <template x-for="f in [['role', 'Role', 'e.g. Lead developer'], ['client', 'Client', 'e.g. Žanis Lipke Memorial'], ['year', 'Year', 'e.g. 2023 or 2021 - 2022'], ['duration', 'Duration', 'e.g. 3 months'], ['team', 'Team', 'e.g. Solo, Team of 4']]" :key="f[0]">
+                                    <div class="flex items-center gap-2">
+                                        <span class="w-20 flex-shrink-0 text-sm text-zinc-600" x-text="f[1]"></span>
+                                        <input class="field" :placeholder="f[2]" x-model="activeRecord[f[0]]">
+                                    </div>
+                                </template>
+                                <p class="text-xs text-zinc-500">All optional. Shown at the top of the pop-up's details;
+                                    role and year also go in the resume, year and client on the card.</p>
+                            </div>
+
                             <div class="card space-y-3">
                                 <label class="label">Card icon</label>
                                 <div class="flex items-center gap-3">

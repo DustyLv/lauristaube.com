@@ -4,7 +4,7 @@ import { parseList } from "./_utils.js";
 // (published only) and /api/admin/content (drafts too).
 //
 // Shape:
-//   { projects: [{ id, title, description, long_description, icon, tags[], details[],
+//   { projects: [{ id, title, description, long_description, icon, role, client, year, duration, team, tags[], details[],
 //                  links[], is_featured, status, updated_at, media: [{ id, kind, r2_key, url, caption }] }],
 //     experience: [{ id, title, organization, period, description, resume_bullets[], status }],
 //     education:  [ ...same as experience ] }
@@ -13,7 +13,7 @@ export async function buildContent(env, includeDrafts) {
     const [projects, media, timeline] = await Promise.all([
         env.DB.prepare(`
             SELECT id, title, description, long_description, icon, tags, details, links,
-                   is_featured, status, updated_at
+                   is_featured, status, role, client, year, duration, team, updated_at
             FROM projects ${where}
             ORDER BY position, created_at
         `).all(),
